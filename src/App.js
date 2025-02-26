@@ -32,7 +32,9 @@ function HomeRedirect() {
 
 // ProtectedRoute for general route protection
 const ProtectedRoute = ({ children }) => {
-  const userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}");
+  const userPermissions = JSON.parse(
+    localStorage.getItem("userPermissions") || "{}"
+  );
 
   // If no permissions are found, redirect to login
   if (!userPermissions) {
@@ -44,7 +46,9 @@ const ProtectedRoute = ({ children }) => {
 
 // UserManagementRoute for user management specific route protection
 const UserManagementRoute = ({ children }) => {
-  const userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}");
+  const userPermissions = JSON.parse(
+    localStorage.getItem("userPermissions") || "{}"
+  );
 
   if (!userPermissions || !userPermissions.userManagement) {
     return <Navigate to="/dashboard" />;
@@ -55,7 +59,9 @@ const UserManagementRoute = ({ children }) => {
 
 // DesignlabRoute to ensure only users with designlab permission can access
 const DesignlabRoute = ({ children }) => {
-  const userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}");
+  const userPermissions = JSON.parse(
+    localStorage.getItem("userPermissions") || "{}"
+  );
 
   // If the user doesn't have permission for Designlab, redirect to Dashboard
   if (!userPermissions || !userPermissions.designlab) {
@@ -80,7 +86,7 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
-      
+
       {/* Protecting the Category Management page */}
       <Route
         path="/categorymanagement"
@@ -96,9 +102,7 @@ const router = createBrowserRouter(
         path="/designlab"
         element={
           <ProtectedRoute>
-            
-              <Designlab />
-           
+            <Designlab />
           </ProtectedRoute>
         }
       />
