@@ -9,6 +9,7 @@ const ADMIN_USER = {
   password: "pass",
   permissions: {
     productManagement: true,
+    designlab:true,
     orderManagement: true,
     categoryManagement: true,
     couponsManagement: true,
@@ -58,6 +59,7 @@ function Login() {
       if (formData.username === "admin" && formData.password === "pass") {
         const adminPermissions = {
           productManagement: true,
+          designlab:true,
           orderManagement: true,
           categoryManagement: true,
           couponsManagement: true,

@@ -17,6 +17,7 @@ import Coupons from "./pages/Coupoes/coupoes.jsx";
 import User from "./pages/UserManagement/usermanagement.jsx";
 import Login from "./pages/Login/Login";
 import Marketing from "./pages/marketing/marketing.jsx";
+import Designlab from "./pages/Designlab/designlab.jsx";
 import { useEffect } from "react";
 
 function HomeRedirect() {
@@ -29,10 +30,11 @@ function HomeRedirect() {
   return null;
 }
 
-// Add this component to protect routes
+// ProtectedRoute for general route protection
 const ProtectedRoute = ({ children }) => {
-  const userPermissions = localStorage.getItem("userPermissions");
+  const userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}");
 
+  // If no permissions are found, redirect to login
   if (!userPermissions) {
     return <Navigate to="/login" />;
   }
@@ -40,13 +42,23 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Add this new component for user management route protection
+// UserManagementRoute for user management specific route protection
 const UserManagementRoute = ({ children }) => {
-  const userPermissions = JSON.parse(
-    localStorage.getItem("userPermissions") || "{}"
-  );
+  const userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}");
 
   if (!userPermissions || !userPermissions.userManagement) {
+    return <Navigate to="/dashboard" />;
+  }
+
+  return children;
+};
+
+// DesignlabRoute to ensure only users with designlab permission can access
+const DesignlabRoute = ({ children }) => {
+  const userPermissions = JSON.parse(localStorage.getItem("userPermissions") || "{}");
+
+  // If the user doesn't have permission for Designlab, redirect to Dashboard
+  if (!userPermissions || !userPermissions.designlab) {
     return <Navigate to="/dashboard" />;
   }
 
@@ -58,6 +70,8 @@ const router = createBrowserRouter(
     <Route>
       <Route path="/" element={<HomeRedirect />} />
       <Route path="/login" element={<Login />} />
+
+      {/* Protecting the Product Management page */}
       <Route
         path="/productmanagement"
         element={
@@ -66,6 +80,8 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+      
+      {/* Protecting the Category Management page */}
       <Route
         path="/categorymanagement"
         element={
@@ -74,6 +90,20 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+
+      {/* Protecting Designlab page with special permission check */}
+      <Route
+        path="/designlab"
+        element={
+          <ProtectedRoute>
+            
+              <Designlab />
+           
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protecting Orders page */}
       <Route
         path="/order"
         element={
@@ -82,6 +112,8 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+
+      {/* Protecting User Management page */}
       <Route
         path="/user-management"
         element={
@@ -92,6 +124,8 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+
+      {/* Protecting Dashboard page */}
       <Route
         path="/dashboard"
         element={
@@ -100,6 +134,8 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+
+      {/* Protecting Coupons page */}
       <Route
         path="/coupons"
         element={
@@ -108,6 +144,8 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+
+      {/* Protecting Inventory page */}
       <Route
         path="/inventory"
         element={
@@ -116,6 +154,8 @@ const router = createBrowserRouter(
           </ProtectedRoute>
         }
       />
+
+      {/* Protecting Marketing page */}
       <Route
         path="/marketing"
         element={

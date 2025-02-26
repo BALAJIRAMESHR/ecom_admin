@@ -23,7 +23,8 @@ const Sidebar = ({ active }) => {
 
   const mainMenuItems = [
     { name: 'Dashboard', icon: <Home className='w-5'/>, permission: null }, // Always show Dashboard
-    { name: 'ProductManagement', icon: <Package className='w-5'/>, permission: 'productManagement' },
+    { name: 'ProductManagement', icon: <Package className='w-5' />, permission: 'productManagement' },
+    { name: 'Designlab', icon: <Package className='w-5'/>, permission: 'null' },
     { name: 'CategoryManagement', icon: <BarChart2 className='w-5'/>, permission: 'categoryManagement' },
     { name: 'Order', icon: <ShoppingCart className='w-5'/>, permission: 'orderManagement' },
     { name: 'User Management', icon: <Users className='w-5' />, permission: 'userManagement' },

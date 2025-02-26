@@ -1,777 +1,924 @@
-import React, { useState, useEffect } from "react";
-import { Upload, X, GripVertical } from "lucide-react";
-import { productService } from "../../../services/productService";
-import { categoryService } from "../../../services/categoryService";
-import { API_BASE_URL } from "../../../config/api";
-import { variantService } from "../../../services/variantService";
-import VariantPopup from "./VariantPopup";
-import PropTypes from "prop-types";
-import axios from "axios";
+import React, { useState, useRef, useEffect } from 'react';
+import { Image, X, Upload, Plus, Camera } from 'lucide-react';
 
-const AddProduct = ({ onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    productName: "",
-    productCode: "",
-    categoryId: "",
-    categoryName: "",
-    variantName: "",
-    description: "",
-    actualPrice: "",
-    sellingPrice: "",
-    tax: "",
-    couponCode: "",
-    couponMethod: "",
-    color: "",
-    images: [],
-    tags: [],
-    stock: "",
-    availability: true,
-    sareeSize: 5.5,
-    blouseSize: 0.8,
-    materialAndCare: "",
-  });
+// Modal Component for adding new variants and customization types
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [tags, setTags] = useState([]);
-  const [isPriceSame, setIsPriceSame] = useState(false);
-  const [materialCare, setMaterialCare] = useState([]);
-  const [isDragging, setIsDragging] = useState(false);
+// Image Upload Modal Component
+const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
+  const fileInputRef = useRef(null);
+  
+  if (!isOpen) return null;
+  
+  const handleFileSelect = () => {
+    fileInputRef.current.click();
+  };
+  
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // In a real app, you would handle the file upload to a server
+      // For this demo, we'll just use a placeholder
+      onUpload(`/api/placeholder/400/300`);
+      onClose();
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">{title || "Upload Image"}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="space-y-6">
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+              onClick={handleFileSelect}
+            >
+              <Camera className="w-16 h-16 text-gray-400" />
+              <p className="mt-4 text-center text-gray-500">Click to select an image from your device</p>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFileSelect}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Choose File
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  // Add new state for categories
-  const [categories, setCategories] = useState([]);
+// Add Customization Image Modal
+const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
+  const fileInputRef = useRef(null);
+  
+  if (!isOpen) return null;
+  
+  const handleFileSelect = () => {
+    fileInputRef.current.click();
+  };
+  
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      // In a real app, you would handle the file upload to a server
+      // For this demo, we'll just use a placeholder
+      onUpload(`/api/placeholder/400/300`);
+      onClose();
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">{title || "Add Image"}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="space-y-4">
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+              onClick={handleFileSelect}
+            >
+              <Image className="w-16 h-16 text-gray-400" />
+              <p className="mt-2 text-center text-gray-500">Drop your Files here or Browse</p>
+            </div>
+            
+            <div className="mt-2">
+              <input
+                type="text"
+                placeholder="Enter a Name"
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+              className="hidden" 
+              accept="image/*"
+            />
+            
+            <div className="flex justify-between gap-2 mt-4">
+              <button
+                onClick={onClose}
+                className="w-full px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onUpload(`/api/placeholder/400/300`);
+                  onClose();
+                }}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-  // Add new state for variants and popup
-  const [variants, setVariants] = useState([]);
-  const [showVariantPopup, setShowVariantPopup] = useState(false);
+// New CustomizationType Modal Component that includes image upload
+const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
+  const [typeName, setTypeName] = useState('');
+  const [options, setOptions] = useState([]);
+  const [newOption, setNewOption] = useState('');
+  const [images, setImages] = useState([]);
+  const [showCustomImageModal, setShowCustomImageModal] = useState(false);
+  const fileInputRef = useRef(null);
 
-  // Fetch categories when component mounts
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const data = await categoryService.getAllCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error("Failed to fetch categories:", error);
-      // Optionally show an error message to the user
+  const handleAddOption = () => {
+    if (newOption.trim()) {
+      setOptions([...options, newOption.trim()]);
+      setNewOption('');
     }
   };
 
-  // Add useEffect to fetch variants
-  useEffect(() => {
-    fetchVariants();
-  }, []);
-
-  const fetchVariants = async () => {
-    try {
-      const data = await variantService.getAllVariants();
-      setVariants(data);
-    } catch (error) {
-      console.error("Failed to fetch variants:", error);
-    }
+  const handleRemoveOption = (index) => {
+    setOptions(options.filter((_, i) => i !== index));
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => {
-      if (name === "category") {
-        // When category changes, update both categoryId and categoryName
-        const selectedCategory = categories.find((cat) => cat._id === value);
-        return {
-          ...prev,
-          categoryId: value,
-          categoryName: selectedCategory ? selectedCategory.categoryName : "",
-        };
-      }
-      return {
-        ...prev,
-        [name]: value,
-      };
-    });
-
-    if (isPriceSame && name === "actualPrice") {
-      setFormData((prev) => ({
-        ...prev,
-        sellingPrice: value,
-      }));
-    }
+  const handleFileSelect = () => {
+    setShowCustomImageModal(true);
   };
-
-  const handleImageSelect = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0 && formData.images.length < 6) {
-      files.slice(0, 6 - formData.images.length).forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setSelectedImage(reader.result);
-          setFormData((prev) => ({
-            ...prev,
-            images: [...prev.images, reader.result].slice(0, 6),
-          }));
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-  };
-
-  const handleDragStart = (e, index) => {
-    e.dataTransfer.setData("text/plain", index);
-    e.target.classList.add("opacity-50");
-  };
-
-  const handleDragEnd = (e) => {
-    e.target.classList.remove("opacity-50");
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.target.closest(".image-container")?.classList.add("border-purple-500");
-  };
-
-  const handleDragLeave = (e) => {
-    e.target.closest(".image-container")?.classList.remove("border-purple-500");
-  };
-
-  const handleImageDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0 && formData.images.length < 6) {
-      handleImageSelect({ target: { files } });
-    }
+  
+  const handleAddImage = (imagePath) => {
+    setImages([...images, imagePath]);
   };
 
   const handleRemoveImage = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index),
-    }));
-    if (formData.images.length === 1) {
-      setSelectedImage(null);
-    }
+    setImages(images.filter((_, i) => i !== index));
   };
 
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-    const dragIndex = parseInt(e.dataTransfer.getData("text/plain"));
-    if (dragIndex === dropIndex) return;
-
-    setFormData((prev) => {
-      const newImages = [...prev.images];
-      const draggedImage = newImages[dragIndex];
-      newImages.splice(dragIndex, 1);
-      newImages.splice(dropIndex, 0, draggedImage);
-      return {
-        ...prev,
-        images: newImages,
-      };
-    });
-
-    e.target.closest(".image-container")?.classList.remove("border-purple-500");
-  };
-
-  const handleAddTag = (tag) => {
-    if (!tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setFormData((prev) => ({
-        ...prev,
-        tags: [...prev.tags, tag],
-      }));
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-    setFormData((prev) => ({
-      ...prev,
-      tags: prev.tags.filter((tag) => tag !== tagToRemove),
-    }));
-  };
-
-  const handleAddMaterialCare = (care) => {
-    if (!materialCare.includes(care)) {
-      const updatedMaterialCare = [...materialCare, care];
-      setMaterialCare(updatedMaterialCare);
-      setFormData((prev) => ({
-        ...prev,
-        materialAndCare: updatedMaterialCare.join(", "),
-      }));
-    }
-  };
-
-  const handleRemoveMaterialCare = (careToRemove) => {
-    const updatedMaterialCare = materialCare.filter(
-      (care) => care !== careToRemove
-    );
-    setMaterialCare(updatedMaterialCare);
-    setFormData((prev) => ({
-      ...prev,
-      materialAndCare: updatedMaterialCare.join(", "),
-    }));
-  };
-
-  const handleAddVariant = async (variantData) => {
-    try {
-      const newVariant = await variantService.addVariant(variantData);
-      setVariants([...variants, newVariant]);
-    } catch (error) {
-      console.error("Failed to add variant:", error);
-      throw error;
-    }
-  };
-
-  const base64ToFile = (base64String, fileName) => {
-    const byteString = atob(base64String.split(',')[1]);
-    const mimeString = base64String.split(',')[0].split(':')[1].split(';')[0];
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-    const blob = new Blob([ab], { type: mimeString });
-    return new File([blob], fileName, { type: mimeString });
-  };
-  
-  const uploadImage = async (base64String, fileName) => {
-    const file = base64ToFile(base64String, fileName);
-  
-    const data = new FormData();
-    data.append('file', file);
-  
-    const config = {
-      method: 'post',
-      maxBodyLength: Infinity,
-      url: '/upload', 
-      headers: {
-        'Authorization': 'QuindlTokPATFileUpload2025#$$TerOiu$',
-        'Content-Type': 'multipart/form-data'
-      },
-      data: data
-    };
-  
-    try {
-      const response = await axios.request(config);
-      console.log(response.data);
-      return response.data.filePath;
-    } catch (error) {
-      console.error(error);
-      return null;
-    }
-  };
-  
-  const uploadImagesAndGetUrls = async (images) => {
-    const urls = [];
-    for (const image of images) {
-      const fileName = `image-${Date.now()}.png`;
-      const url = await uploadImage(image, fileName);
-      if (url) {
-        urls.push(url);
-      }
-    }
-    return urls;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const { images, ...productDataToSubmit } = formData;
-
-      const imageUrls = await uploadImagesAndGetUrls(images);
-      console.log(imageUrls);
-
-      // Convert any empty strings to appropriate types
-      const dataToSubmit = {
-        ...productDataToSubmit,
-        tax: productDataToSubmit.tax ? Number(productDataToSubmit.tax) : 0,
-        stock: productDataToSubmit.stock ? Number(productDataToSubmit.stock) : 0,
-        actualPrice: productDataToSubmit.actualPrice ? Number(productDataToSubmit.actualPrice) : 0,
-        sellingPrice: productDataToSubmit.sellingPrice ? Number(productDataToSubmit.sellingPrice) : 0,
-        sareeSize: productDataToSubmit.sareeSize ? Number(productDataToSubmit.sareeSize) : 5.5,
-        blouseSize: productDataToSubmit.blouseSize ? Number(productDataToSubmit.blouseSize) : 0.8,
-        availability: Boolean(productDataToSubmit.availability),
-        materialAndCare: Array.isArray(productDataToSubmit.materialAndCare)
-          ? productDataToSubmit.materialAndCare.join(", ")
-          : "",
-        tags: Array.isArray(productDataToSubmit.tags) ? productDataToSubmit.tags : [],
-        images: imageUrls
-      };
-
-      console.log("Submitting product data:", dataToSubmit);
-
-      const response = await productService.addProduct(dataToSubmit);
-      console.log("Server response:", response);
+  const handleSubmit = () => {
+    if (typeName.trim()) {
+      onAdd({
+        id: Date.now(),
+        name: typeName.trim(),
+        options: options,
+        images: images
+      });
       
-      if (typeof onSubmit === 'function') {
-        onSubmit(response);
-      }
-    } catch (error) {
-      console.error("Failed to add product:", error);
-      alert(error.message || "Failed to add product. Please try again.");
+      // Reset form
+      setTypeName('');
+      setOptions([]);
+      setImages([]);
+      onClose();
     }
   };
 
-  const handleCancel = () => {
-    // Call the onCancel prop function to return to product management page
-    if (typeof onCancel === 'function') {
-      onCancel();
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-md max-h-screen overflow-y-auto">
+        <div className="flex justify-between items-center px-6 py-4 border-b sticky top-0 bg-white">
+          <h2 className="text-lg font-semibold">Add New Customization Type</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-6">
+          {/* Type Name */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Type Name</label>
+            <input
+              type="text"
+              value={typeName}
+              onChange={(e) => setTypeName(e.target.value)}
+              placeholder="Enter type name (e.g. Sleeve, Neckline)"
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+          
+          {/* Options */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Options</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newOption}
+                onChange={(e) => setNewOption(e.target.value)}
+                placeholder="Enter option value"
+                className="w-full p-2 border rounded-md"
+              />
+              <button
+                onClick={handleAddOption}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 whitespace-nowrap"
+              >
+                Add
+              </button>
+            </div>
+            
+            {options.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {options.map((option, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1">
+                    {option}
+                    <button
+                      onClick={() => handleRemoveOption(idx)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Images</label>
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-2"
+              onClick={handleFileSelect}
+            >
+              <Camera className="w-12 h-12 text-gray-400" />
+              <p className="mt-2 text-center text-gray-500">Add images for this customization type</p>
+            </div>
+            
+            {images.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {images.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img
+                      src={img}
+                      alt={`Option ${idx + 1}`}
+                      className="w-full aspect-square object-cover rounded-lg"
+                    />
+                    <button
+                      onClick={() => handleRemoveImage(idx)}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Buttons */}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              disabled={!typeName.trim()}
+            >
+              Add Customization Type
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Custom Image Upload Modal */}
+      <CustomizationImageModal
+        isOpen={showCustomImageModal}
+        onClose={() => setShowCustomImageModal(false)}
+        onUpload={handleAddImage}
+        title="Add Neck Line Image"
+      />
+    </div>
+  );
+};
+
+const ProductForm = () => {
+  // Toggle state for customization
+  const [showCustomization, setShowCustomization] = useState(false);
+  
+  // Modal states
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [showCustomTypeModal, setShowCustomTypeModal] = useState(false);
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
+  const [activeCustomTypeId, setActiveCustomTypeId] = useState(null);
+  
+  // Product data
+  const [tags, setTags] = useState(['Bridal Silk', 'Sharee', 'Bridal', 'Women', 'Art work']);
+  const [mainImages, setMainImages] = useState([]);
+  const [variants, setVariants] = useState(['Kanchipuram Bridal']);
+  const [newVariant, setNewVariant] = useState('');
+  const [newTag, setNewTag] = useState('');
+  
+  // Customization states
+  const measurements = ['Shoulder', 'Chest', 'Bust', 'Under Bust', 'Waist', 'Hip', 'Under Arm'];
+  const [selectedInches, setSelectedInches] = useState({});
+  const [customizationTypes, setCustomizationTypes] = useState([]);
+
+  // Form data
+  const [formData, setFormData] = useState({
+    productName: '',
+    productId: '0',
+    category: '',
+    variant: '',
+    description: '.',
+    actualPrice: '',
+    sellingPrice: '',
+    isPriceSame: true,
+    tax: '',
+    couponCode: '',
+    color: '',
+    displayStock: ''
+  });
+
+  // Standard sizes
+  const standardSizes = ['XS', 'S', 'M', 'L', 'XL', '1X', '2X', '3X', '4X', '5X'];
+  const [selectedSizes, setSelectedSizes] = useState({});
+
+  // Handle back button click
+  const handleBackClick = () => {
+    // Navigate back in history
+    window.history.back();
+    // If you're using a router like react-router, you can use:
+    // navigate(-1);  
+    
+  };
+
+  // Input change handler
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+
+    if (name === 'isPriceSame' && checked) {
+      setFormData(prev => ({
+        ...prev,
+        sellingPrice: prev.actualPrice
+      }));
     }
+  };
+
+  // Tag removal handler
+  const handleTagRemove = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  // Add tag handler
+  const handleAddTag = (e) => {
+    if (e.key === 'Enter' && newTag.trim()) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+
+  // Image upload handler
+  const handleImageUpload = (imagePath) => {
+    if (mainImages.length >= 4) {
+      alert('Maximum 4 images allowed');
+      return;
+    }
+    
+    setMainImages(prev => [...prev, imagePath]);
+    console.log('Main Images:', [...mainImages, imagePath]);
+  };
+
+  // Image removal handler
+  const removeImage = (index) => {
+    const updatedImages = mainImages.filter((_, i) => i !== index);
+    setMainImages(updatedImages);
+    console.log('Images after removal:', updatedImages);
+  };
+
+  // Add variant handler
+  const handleAddVariant = () => {
+    if (newVariant.trim()) {
+      const updatedVariants = [...variants, newVariant.trim()];
+      setVariants(updatedVariants);
+      setNewVariant('');
+      setShowVariantModal(false);
+      console.log('Updated variants:', updatedVariants);
+    }
+  };
+
+  // Add customization type handler
+  const handleAddCustomType = (customType) => {
+    const updatedTypes = [...customizationTypes, customType];
+    setCustomizationTypes(updatedTypes);
+    console.log('Added new customization type:', customType);
+    console.log('Updated customization types:', updatedTypes);
+  };
+
+  // Remove a customization type
+  const removeCustomizationType = (typeId) => {
+    const updatedTypes = customizationTypes.filter(type => type.id !== typeId);
+    setCustomizationTypes(updatedTypes);
+    console.log('Removed customization type, remaining types:', updatedTypes);
+  };
+
+  // Log all form data
+  const handleUpdate = () => {
+    const allData = {
+      formData,
+      tags,
+      variants,
+      mainImages,
+      selectedSizes,
+      customizationEnabled: showCustomization,
+      customMeasurements: selectedInches,
+      customizationTypes
+    };
+    
+    console.log('Complete form data:', allData);
+    alert('Product updated successfully!');
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Add Product</h1>
-        <button
-          onClick={handleCancel}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-        >
-          <X className="w-5 h-5 text-gray-500" />
-        </button>
-      </div>
+    <div className="w-full min-h-screen p-4">
+      <div className="max-w-6xl mx-auto">
+        {/* Header with title and customization toggle */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Add Product</h1>
+          <div className="flex items-center gap-2 mt-5">
+            <span>Customization</span>
+            <label className="relative inline-block w-12 h-6">
+              <input
+                type="checkbox"
+                checked={showCustomization}
+                onChange={(e) => {
+                  setShowCustomization(e.target.checked);
+                  console.log('Customization toggled:', e.target.checked);
+                }}
+                className="hidden"
+              />
+              <div className={`w-12 h-6 rounded-full cursor-pointer transition-colors ${
+                showCustomization ? 'bg-purple-600' : 'bg-gray-200'
+              }`}>
+                <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  showCustomization ? 'translate-x-6' : 'translate-x-1'
+                } transform mt-0.5`} />
+              </div>
+            </label>
+          </div>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-4">
+        {/* Back button */}
+        <div className="mb-4">
+          <button 
+            onClick={handleBackClick}
+            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            </svg>
+            Back
+          </button>
+        </div>
+
+        {/* Two-column layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left Column - Product Info - with scrollable container */}
+          <div className="space-y-4 overflow-y-auto pr-4 pb-16" style={{ maxHeight: 'calc(100vh - 150px)' }}>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Product Name
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Product Name</label>
               <input
                 type="text"
                 name="productName"
                 value={formData.productName}
                 onChange={handleInputChange}
+                placeholder="Enter product name"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Product Code
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Product ID</label>
               <input
                 type="text"
-                name="productCode"
-                value={formData.productCode}
+                name="productId"
+                value={formData.productId}
                 onChange={handleInputChange}
+                placeholder="Enter product ID"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Category</label>
+              <label className="block text-sm text-gray-700 mb-1">Category</label>
               <select
                 name="category"
-                value={formData.categoryId}
+                value={formData.category}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-md"
               >
-                <option value="">Select Category</option>
-                {categories.map((category) => (
-                  <option key={category._id} value={category._id}>
-                    {category.categoryName}
-                  </option>
-                ))}
+                <option value="">-Select Category-</option>
+                <option>Women</option>
+                <option>Men</option>
+                <option>Children</option>
+                <option>Accessories</option>
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Variant</label>
+              <label className="block text-sm text-gray-700 mb-1">Variant</label>
               <div className="flex gap-2">
                 <select
-                  name="variantName"
-                  value={formData.variantName}
+                  name="variant"
+                  value={formData.variant}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded-md"
                 >
-                  <option value="">Select Variant</option>
-                  {variants.map((variant) => (
-                    <option key={variant._id} value={variant.variantName}>
-                      {variant.variantName}
-                    </option>
+                  <option value="">-Select Variant-</option>
+                  {variants.map(variant => (
+                    <option key={variant} value={variant}>{variant}</option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => setShowVariantPopup(true)}
-                  className="px-3 py-2 border rounded-md hover:bg-gray-50"
+                <button 
+                  onClick={() => setShowVariantModal(true)}
+                  className="px-4 py-2 border rounded-md hover:bg-gray-50"
                 >
-                  +
+                  <Plus className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Description
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Standard Size</label>
+              <div className="grid grid-cols-5 gap-4">
+                {standardSizes.map(size => (
+                  <label key={size} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedSizes[size] || false}
+                      onChange={(e) => {
+                        const updated = {
+                          ...selectedSizes,
+                          [size]: e.target.checked
+                        };
+                        setSelectedSizes(updated);
+                        console.log('Selected sizes:', updated);
+                      }}
+                      className="rounded"
+                    />
+                    <span>{size}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Size Options - Only shown when customization is enabled */}
+            {showCustomization && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold">Custom Size</h2>
+                {measurements.map(measurement => (
+                  <div key={measurement} className="grid grid-cols-5 gap-2 items-center">
+                    <div className="font-medium">{measurement}</div>
+                    {[1, 2, 3, 4].map(inch => (
+                      <label key={`${measurement}-${inch}`} className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedInches[`${measurement}-${inch}`] || false}
+                          onChange={(e) => {
+                            const updated = {
+                              ...selectedInches,
+                              [`${measurement}-${inch}`]: e.target.checked
+                            };
+                            setSelectedInches(updated);
+                            console.log('Selected inches:', updated);
+                          }}
+                          className="rounded"
+                        />
+                        <span>{inch}' inch</span>
+                      </label>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Customization Types - Only shown when customization is enabled */}
+            {showCustomization && (
+              <div className="space-y-6">
+                <h2 className="text-lg font-semibold">Customization Types</h2>
+                {customizationTypes.length === 0 && (
+                  <p className="text-gray-500">No customization types added yet</p>
+                )}
+                {customizationTypes.map(type => (
+                  <div key={type.id} className="space-y-2 border-b pb-4">
+                    <div className="flex justify-between items-center">
+                      <div className="font-medium">{type.name}</div>
+                      <button
+                        onClick={() => removeCustomizationType(type.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    {type.options.length > 0 && (
+                      <div>
+                        <div className="text-sm text-gray-500 mb-1">Options:</div>
+                        <div className="flex flex-wrap gap-2">
+                          {type.options.map((option, idx) => (
+                            <span key={idx} className="px-3 py-1 bg-gray-100 rounded-full">
+                              {option}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {type.images.length > 0 && (
+                      <div>
+                        <div className="text-sm text-gray-500 mb-1">Images:</div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {type.images.map((img, idx) => (
+                            <div key={idx} className="relative group">
+                              <img 
+                                src={img} 
+                                alt={`${type.name} ${idx + 1}`}
+                                className="w-full aspect-square object-cover rounded-lg"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => setShowCustomTypeModal(true)}
+                  className="w-full py-2 border rounded hover:bg-gray-50 flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add New Customization Type
+                </button>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Description</label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
+                className="w-full p-2 border rounded-md"
+                placeholder="Enter product description"
                 rows="4"
-                className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Stock Quantity
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Actual Price</label>
               <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleInputChange}
-                min="0"
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Availability
-              </label>
-              <select
-                name="availability"
-                value={formData.availability}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="true">In Stock</option>
-                <option value="false">Out of Stock</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Saree Size (meters)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                name="sareeSize"
-                value={formData.sareeSize}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Blouse Size (meters)
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                name="blouseSize"
-                value={formData.blouseSize}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Actual Price
-              </label>
-              <input
-                type="number"
+                type="text"
                 name="actualPrice"
                 value={formData.actualPrice}
                 onChange={handleInputChange}
+                placeholder="Enter actual price"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Selling Price
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Selling Price</label>
               <input
-                type="number"
+                type="text"
                 name="sellingPrice"
                 value={formData.sellingPrice}
                 onChange={handleInputChange}
-                disabled={isPriceSame}
+                placeholder="Enter selling price"
                 className="w-full p-2 border rounded-md"
               />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={isPriceSame}
-                onChange={(e) => {
-                  setIsPriceSame(e.target.checked);
-                  if (e.target.checked) {
-                    setFormData((prev) => ({
-                      ...prev,
-                      sellingPrice: prev.actualPrice,
-                    }));
-                  }
-                }}
-                className="rounded"
-              />
-              <label className="text-sm">
-                Actual Price same as Selling Price
-              </label>
+              <div className="mt-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    name="isPriceSame"
+                    checked={formData.isPriceSame}
+                    onChange={handleInputChange}
+                    className="rounded"
+                  />
+                  <span>Actual Price same as Selling Price</span>
+                </label>
+              </div>
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-4">
-            <div
-              className="relative border-2 border-dashed border-gray-300 rounded-lg p-6"
-              onDrop={handleImageDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-            >
-              {isDragging && (
-                <div className="absolute inset-0 bg-purple-50 bg-opacity-90 flex items-center justify-center rounded-lg z-10">
-                  <div className="text-center">
-                    <Upload className="w-12 h-12 mx-auto mb-2 text-purple-600 stroke-1" />
-                    <p className="text-purple-600 font-medium">
-                      Drop your images here
-                    </p>
-                    <p className="text-sm text-purple-500">Release to upload</p>
-                  </div>
+          {/* Right Column - Images and Additional Info */}
+          <div className="space-y-4 pb-16">
+            {/* Image Upload Area */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <div className="text-center">
+                <div 
+                  onClick={() => setShowImageUploadModal(true)}
+                  className="cursor-pointer flex flex-col items-center justify-center"
+                >
+                  <Upload className="w-12 h-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-500">Drop your Files here or Browse</p>
+                  <p className="text-xs text-gray-400">Max 4 images allowed</p>
+                </div>
+              </div>
+              {mainImages.length > 0 && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {mainImages.map((img, idx) => (
+                    <div key={idx} className="relative group">
+                      <img
+                        src={img}
+                        alt={`Product ${idx + 1}`}
+                        className="w-full aspect-square object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => removeImage(idx)}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-6">
-                {formData.images.map((image, index) => (
-                  <div
-                    key={index}
-                    className="image-container relative bg-gray-50 p-2 rounded-lg group transition-all hover:shadow-md border-2 border-transparent"
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, index)}
-                  >
-                    <div className="absolute top-1 left-1 p-1.5 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity cursor-move">
-                      <GripVertical className="w-4 h-4 text-gray-600" />
-                    </div>
-                    <img
-                      src={image}
-                      alt={`Product ${index + 1}`}
-                      className="w-full h-40 object-contain rounded-lg"
-                      draggable={false}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(index)}
-                      className="absolute top-1 right-1 p-1.5 bg-white rounded-full shadow-md opacity-0 group-hover:opacity-100 hover:bg-gray-50 transition-all"
-                    >
-                      <X className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-                ))}
-                {formData.images.length < 6 && (
-                  <label
-                    className={`flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 p-2 cursor-pointer hover:bg-gray-100 transition-all hover:shadow-md ${
-                      formData.images.length === 0 ? "col-span-3 h-40" : "h-50"
-                    }`}
-                  >
-                    <div className="text-center">
-                      <Upload
-                        className={`mx-auto mb-2 stroke-1 ${
-                          formData.images.length === 0
-                            ? "w-10 h-10 text-gray-400"
-                            : "w-10 h-10 text-gray-400"
-                        }`}
-                      />
-                      <p
-                        className={`font-medium text-gray-600 ${
-                          formData.images.length === 0 ? "text-sm" : "text-sm"
-                        }`}
-                      >
-                        Upload Product Images
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Drag & drop or click to browse
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        ({6 - formData.images.length} of 6 remaining) • PNG, JPG
-                        • 800x1200px
-                      </p>
-                    </div>
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageSelect}
-                    />
-                  </label>
-                )}
-              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Tax (in percentage)
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Tax (in percentage)</label>
               <input
-                type="number"
+                type="text"
                 name="tax"
                 value={formData.tax}
                 onChange={handleInputChange}
+                placeholder="Enter tax percentage"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Coupon / Code
-              </label>
+              <label className="block text-sm text-gray-700 mb-1">Tags</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1"
+                  >
+                    {tag}
+                    <button
+                      onClick={() => handleTagRemove(tag)}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={newTag}
+                onChange={(e) => setNewTag(e.target.value)}
+                onKeyDown={handleAddTag}
+                placeholder="Add a tag and press Enter"
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Coupon Code</label>
               <input
                 type="text"
                 name="couponCode"
                 value={formData.couponCode}
                 onChange={handleInputChange}
-                placeholder="Use Code PARTY 56689"
+                placeholder="Enter coupon code"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Coupons Method
-              </label>
-              <select
-                name="couponMethod"
-                value={formData.couponMethod}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">-select-</option>
-                <option value="percentage">Percentage</option>
-                <option value="fixed">Fixed Amount</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Color</label>
+              <label className="block text-sm text-gray-700 mb-1">Color</label>
               <input
                 type="text"
                 name="color"
                 value={formData.color}
                 onChange={handleInputChange}
-                placeholder="Type Color Code"
+                placeholder="Enter product color"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Tags</label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-gray-200 rounded-md text-sm flex items-center gap-1"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTag(tag)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Add tags"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddTag(e.target.value);
-                      e.target.value = "";
-                    }
-                  }}
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
+              <label className="block text-sm text-gray-700 mb-1">Display Stock</label>
+              <input
+                type="text"
+                name="displayStock"
+                value={formData.displayStock}
+                onChange={handleInputChange}
+                placeholder="Enter stock to display"
+                className="w-full p-2 border rounded-md"
+              />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Material & Care
-              </label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {materialCare.map((care, index) => (
-                  <span
-                    key={index}
-                    className="px-2 py-1 bg-gray-200 rounded-md text-sm flex items-center gap-1"
-                  >
-                    {care}
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveMaterialCare(care)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Add material & care instructions"
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddMaterialCare(e.target.value);
-                      e.target.value = "";
-                    }
-                  }}
-                  className="w-full p-2 border rounded-md"
-                />
-              </div>
+            {/* Update Button */}
+            <div className="mt-8">
+              <button
+                onClick={handleUpdate}
+                className="w-full py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Update
+              </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex justify-end gap-4 mt-6">
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            onClick={handleSubmit}
-            className="px-4 py-2 text-sm font-medium text-white bg-purple-600 border border-transparent rounded-md shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
-          >
-            Add Product
-          </button>
+      {/* Variant Modal */}
+      <Modal isOpen={showVariantModal} onClose={() => setShowVariantModal(false)} title="Add New Variant">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Variant Name</label>
+            <input
+              type="text"
+              value={newVariant}
+              onChange={(e) => setNewVariant(e.target.value)}
+              placeholder="Enter variant name"
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setShowVariantModal(false)}
+              className="px-4 py-2 border rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddVariant}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              disabled={!newVariant.trim()}
+            >
+              Add Variant
+            </button>
+          </div>
         </div>
-      </form>
+      </Modal>
 
-      {showVariantPopup && (
-        <VariantPopup
-          onClose={() => setShowVariantPopup(false)}
-          onAdd={handleAddVariant}
-        />
-      )}
+      {/* Image Upload Modal */}
+      <ImageUploadModal
+        isOpen={showImageUploadModal}
+        onClose={() => setShowImageUploadModal(false)}
+        onUpload={handleImageUpload}
+      />
+
+      {/* Customization Type Modal */}
+      <CustomizationTypeModal
+        isOpen={showCustomTypeModal}
+        onClose={() => setShowCustomTypeModal(false)}
+        onAdd={handleAddCustomType}
+      />
     </div>
   );
 };
 
-AddProduct.propTypes = {
-  onSubmit: PropTypes.func,
-  onCancel: PropTypes.func.isRequired,
-};
-
-export default AddProduct;
+export default ProductForm;
