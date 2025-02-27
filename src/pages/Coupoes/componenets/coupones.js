@@ -799,7 +799,7 @@ const CouponsList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Coupons</h1>
@@ -823,7 +823,7 @@ const CouponsList = () => {
           <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {filteredCoupons.length > 0 ? (
             filteredCoupons.map((coupon) => (
               <CouponCard

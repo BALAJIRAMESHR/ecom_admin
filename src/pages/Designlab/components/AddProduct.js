@@ -1,0 +1,602 @@
+import React, { useState, useRef } from 'react';
+import { Image, X, Upload, Plus, Camera } from 'lucide-react';
+
+// Modal Component
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Image Upload Modal Component
+const ImageUploadModal = ({ isOpen, onClose, onUpload }) => {
+  const fileInputRef = useRef(null);
+  
+  if (!isOpen) return null;
+  
+  const handleFileSelect = () => {
+    fileInputRef.current.click();
+  };
+  
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onUpload(`/api/placeholder/400/300`);
+      onClose();
+    }
+  };
+  
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+      <div className="bg-white rounded-lg w-full max-w-md">
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <h2 className="text-lg font-semibold">Upload Image</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6">
+          <div className="space-y-6">
+            <div 
+              className="border-2 border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+              onClick={handleFileSelect}
+            >
+              <Upload className="w-16 h-16 text-gray-400" />
+              <p className="mt-4 text-center text-gray-500">Drop your Files here or Browse</p>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+                accept="image/*"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 border rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFileSelect}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Browse
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProductForm = () => {
+  // Initial form state
+  const initialFormData = {
+    productName: '',
+    productId: '',
+    variant: '-select-',
+    description: '',
+    actualPrice: '',
+    sellingPrice: '',
+    isPriceSame: true,
+    tax: '',
+    couponCode: '',
+    couponMethod: '-select-',
+    displayStock: '-select-',
+    colorCodes: '',
+    letterCodes: ''
+  };
+
+  // Initial sizes state
+  const initialSizesState = {
+    kids: {},
+    adult: {},
+    youth: {},
+    women: {}
+  };
+
+  // Form data state
+  const [formData, setFormData] = useState(initialFormData);
+
+  // State for selected sizes
+  const [selectedSizes, setSelectedSizes] = useState(initialSizesState);
+  
+  // Initial tags
+  const initialTags = ['Jersey', 'Shirt', 'T-Shirt', 'Formal'];
+  
+  // Tags state
+  const [tags, setTags] = useState(initialTags);
+  const [newTag, setNewTag] = useState('');
+  
+  // Image states
+  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
+  const [productImages, setProductImages] = useState([]);
+  
+  // Modal states
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [newVariant, setNewVariant] = useState('');
+  
+  // Reset form function
+  const resetForm = () => {
+    setFormData(initialFormData);
+    setSelectedSizes(initialSizesState);
+    setTags(initialTags);
+    setProductImages([]);
+  };
+  
+  // Input change handler
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    if (name === 'isPriceSame' && checked) {
+      setFormData(prev => ({
+        ...prev,
+        sellingPrice: prev.actualPrice
+      }));
+    }
+  };
+  
+  // Size checkbox handler
+  const handleSizeCheck = (category, size, checked) => {
+    setSelectedSizes(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [size]: checked
+      }
+    }));
+  };
+  
+  // Tag handlers
+  const handleAddTag = (e) => {
+    if (e.key === 'Enter' && newTag.trim()) {
+      setTags([...tags, newTag.trim()]);
+      setNewTag('');
+    }
+  };
+  
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+  
+  // Image handlers
+  const handleImageUpload = (imagePath) => {
+    if (productImages.length >= 4) {
+      alert('Maximum 4 images allowed');
+      return;
+    }
+    
+    setProductImages([...productImages, imagePath]);
+  };
+  
+  const removeImage = (index) => {
+    setProductImages(productImages.filter((_, i) => i !== index));
+  };
+  
+  // Add variant handler
+  const handleAddVariant = () => {
+    if (newVariant.trim()) {
+      // In a real app, you would add this to your variants list
+      setNewVariant('');
+      setShowVariantModal(false);
+    }
+  };
+  
+  // Form submission
+  const handleUpdate = () => {
+    // Include all data in a single object for logging
+    const completeFormData = {
+      ...formData,
+      selectedSizes,
+      tags,
+      productImages
+    };
+    
+    console.log('Form data:', completeFormData);
+    alert('Product updated successfully!');
+    
+    // Reset the form after submission
+    resetForm();
+  };
+  
+  // Size options
+  const sizes = ['XS', 'S', 'M', 'L', 'XL', '1X', '2X', '3X', '4X', '5X'];
+  
+  return (
+    <div className="w-full py-4 px-6">
+      <h1 className="text-2xl font-bold mb-6">Add Product</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Left Column - Product Information */}
+        <div className="space-y-6 h-screen overflow-y-auto pr-4 pb-20">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+            <input
+              type="text"
+              name="productName"
+              value={formData.productName}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Enter product name"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product ID</label>
+            <input
+              type="text"
+              name="productId"
+              value={formData.productId}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Enter product ID"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Variant</label>
+            <div className="flex gap-2">
+              <select
+                name="variant"
+                value={formData.variant}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="-select-">-select-</option>
+                <option value="Jersey T-shirt">Jersey T-shirt</option>
+                <option value="V-neck T-shirt">V-neck T-shirt</option>
+                <option value="Polo T-shirt">Polo T-shirt</option>
+              </select>
+              <button 
+                onClick={() => setShowVariantModal(true)}
+                className="p-2 border border-gray-300 rounded-md"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          
+          {/* Kids Size Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Kids</label>
+            <div className="grid grid-cols-5 gap-4">
+              {sizes.map(size => (
+                <label key={`kids-${size}`} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.kids[size] || false}
+                    onChange={(e) => handleSizeCheck('kids', size, e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span>{size}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Adult Size Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Adult Size</label>
+            <div className="grid grid-cols-5 gap-4">
+              {sizes.map(size => (
+                <label key={`adult-${size}`} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.adult[size] || false}
+                    onChange={(e) => handleSizeCheck('adult', size, e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span>{size}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Youth Size Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Youth Size</label>
+            <div className="grid grid-cols-5 gap-4">
+              {sizes.map(size => (
+                <label key={`youth-${size}`} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.youth[size] || false}
+                    onChange={(e) => handleSizeCheck('youth', size, e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span>{size}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Women Size Section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Women</label>
+            <div className="grid grid-cols-5 gap-4">
+              {sizes.map(size => (
+                <label key={`women-${size}`} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedSizes.women[size] || false}
+                    onChange={(e) => handleSizeCheck('women', size, e.target.checked)}
+                    className="mr-2"
+                  />
+                  <span>{size}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          
+          {/* Product Color */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Color</label>
+            <textarea
+              name="colorCodes"
+              value={formData.colorCodes}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md resize-none"
+              rows="5"
+              placeholder="Enter color codes (one per line)"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Letter Printing Color</label>
+            <textarea
+              name="letterCodes"
+              value={formData.letterCodes}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md resize-none"
+              rows="5"
+              placeholder="Enter color codes (one per line)"
+            />
+          </div>
+          
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              rows="4"
+              placeholder="Enter product description"
+            />
+          </div>
+          
+          {/* Actual Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Actual Price</label>
+            <input
+              type="text"
+              name="actualPrice"
+              value={formData.actualPrice}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Enter actual price"
+            />
+          </div>
+          
+          {/* Selling Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
+            <input
+              type="text"
+              name="sellingPrice"
+              value={formData.sellingPrice}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Enter selling price"
+            />
+            <div className="mt-2">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  name="isPriceSame"
+                  checked={formData.isPriceSame}
+                  onChange={handleInputChange}
+                  className="form-checkbox h-5 w-5 text-purple-600"
+                />
+                <span className="ml-2">Actual Price same as Selling Price</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Column - Images and additional info */}
+        <div className="space-y-6">
+          {/* Image Upload Area */}
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6">
+            <div className="flex flex-col items-center justify-center">
+              <Upload className="w-12 h-12 text-gray-400" />
+              <p className="mt-2 text-center text-gray-500">Drop your Files here or <span className="text-blue-500 cursor-pointer" onClick={() => setShowImageUploadModal(true)}>Browse</span></p>
+            </div>
+            
+            {/* Image Gallery */}
+            {productImages.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
+                {productImages.map((img, idx) => (
+                  <div key={idx} className="relative group">
+                    <img 
+                      src={img} 
+                      alt={`Product ${idx}`} 
+                      className="w-full h-24 object-cover rounded border border-gray-200"
+                    />
+                    <button
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                
+                {Array.from({ length: 4 - productImages.length }).map((_, idx) => (
+                  <div key={`empty-${idx}`} className="border border-gray-200 rounded flex items-center justify-center h-24">
+                    <Image className="w-8 h-8 text-gray-300" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Tax */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tax (in percentage)</label>
+            <input
+              type="text"
+              name="tax"
+              value={formData.tax}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Enter tax percentage"
+            />
+          </div>
+          
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tags</label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map(tag => (
+                <div key={tag} className="flex items-center bg-gray-100 px-3 py-1 rounded-full">
+                  <span>{tag}</span>
+                  <button 
+                    onClick={() => handleRemoveTag(tag)}
+                    className="ml-2 text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={handleAddTag}
+              placeholder="Enter tag and press Enter"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          
+          {/* Coupon Code */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Coupon / Code</label>
+            <input
+              type="text"
+              name="couponCode"
+              value={formData.couponCode}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Enter coupon code"
+            />
+          </div>
+          
+          {/* Coupons Method */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Coupons Method</label>
+            <select
+              name="couponMethod"
+              value={formData.couponMethod}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="-select-">-select-</option>
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed Amount</option>
+            </select>
+          </div>
+          
+          {/* Display Stock */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Display Stock Availability</label>
+            <select
+              name="displayStock"
+              value={formData.displayStock}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="-select-">-select-</option>
+              <option value="in-stock">In Stock</option>
+              <option value="low-stock">Low Stock</option>
+              <option value="out-of-stock">Out of Stock</option>
+            </select>
+          </div>
+          
+          {/* Button Group */}
+          <div className="mt-8 flex gap-4">
+           
+            <button
+              onClick={handleUpdate}
+              className="w-2/3 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            >
+              Update
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Variant Modal */}
+      <Modal isOpen={showVariantModal} onClose={() => setShowVariantModal(false)} title="Add New Variant">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Variant Name</label>
+            <input
+              type="text"
+              value={newVariant}
+              onChange={(e) => setNewVariant(e.target.value)}
+              placeholder="Enter variant name"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setShowVariantModal(false)}
+              className="px-4 py-2 border rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAddVariant}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              disabled={!newVariant.trim()}
+            >
+              Add Variant
+            </button>
+          </div>
+        </div>
+      </Modal>
+      
+      {/* Image Upload Modal */}
+      <ImageUploadModal
+        isOpen={showImageUploadModal}
+        onClose={() => setShowImageUploadModal(false)}
+        onUpload={handleImageUpload}
+      />
+    </div>
+  );
+};
+
+export default ProductForm;
