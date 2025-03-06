@@ -1,1 +1,1 @@
-export const API_BASE_URL = "https://ecom-api-quindl.onrender.com";
+export const API_BASE_URL = "https://ecom-2-osny.onrender.com";

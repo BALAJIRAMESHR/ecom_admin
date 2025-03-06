@@ -112,7 +112,7 @@ const BannerAndOfferUpdate = () => {
   const handleRemoveContent = async (indexToRemove) => {
     try {
       // Since we don't have a delete endpoint, we'll mark it as deleted using edit
-      const response = await fetch(`${API_BASE_URL}/marketing/editcontent/${editingContentId}`, {
+      const response = await fetch(`${API_BASE_URL}/marketing/editcontent/${indexToRemove}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

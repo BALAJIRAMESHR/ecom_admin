@@ -1,12 +1,21 @@
 import { Search, LogOut, UserCog, ChevronDown } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const Header = ({ title }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const data = localStorage.getItem("userRole");
+    setUserRole(data);
+    console.log(userRole);
+  }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userPermissions");
     navigate("/login");
   };
 
@@ -26,26 +35,26 @@ const Header = ({ title }) => {
           onClick={() => setShowDropdown(!showDropdown)}
         >
           <div className="w-8 h-8 bg-gray-200 font-medium rounded-full"></div>
-          <span>Admin Account</span>
+          <span className="capitalize">{ userRole }</span>
           <ChevronDown className="w-4 h-4" />
         </div>
 
         {showDropdown && (
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
-            <div className="px-4 py-2 border-b border-gray-200">
-              <p className="font-medium">Ragavi</p>
-              <p className="text-sm text-gray-500">Last Login: 10:12AM</p>
-            </div>
-            <div className="py-1">
-              <button
+            {/* <div className="px-4 py-2 border-b border-gray-200"> */}
+              {/* <p className="font-medium capitalize">{{ userRole }}</p> */}
+              {/* <p className="text-sm text-gray-500">Last Login: 10:12AM</p> */}
+            {/* </div> */}
+            <div className="py-0">
+              {/* <button
                 className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
                 onClick={() => navigate("/profile")}
               >
                 <UserCog className="w-4 h-4" />
                 Edit Profile
-              </button>
+              </button> */}
               <button
-                className="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center gap-2"
+                className="w-full px-4 py-1 text-left hover:bg-gray-100 flex items-center gap-2"
                 onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4" />
