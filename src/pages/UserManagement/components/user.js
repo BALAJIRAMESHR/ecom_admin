@@ -43,7 +43,9 @@ const UserManagement = () => {
     fetchUsers();
   }, []);
 
-  const handleCreateUser = async () => {
+  const handleCreateUser = async (e) => {
+    e.preventDefault(); // Always prevent the default form submission
+    
     try {
       const userData = {
         username: newUser.username,
@@ -80,7 +82,9 @@ const UserManagement = () => {
     });
   };
 
-  const handleSaveEdit = async (id) => {
+  const handleSaveEdit = async (id, e) => {
+    e.preventDefault(); // Always prevent the default form submission
+    
     try {
       const response = await axios.put(`${API_BASE_URL}/api/admin/edit/${id}`, {
         username: editUser.username,
@@ -168,28 +172,29 @@ const UserManagement = () => {
             <button 
               onClick={() => handleEdit(user)}
               className="p-3 rounded-full bg-purple-100 hover:bg-purple-200"
+              type="button"
             >
               <Edit className="w-5 h-5 text-purple-600" />
             </button>
           </div>
 
-          <div className="space-y-4 mt-6">
-            {isEditing ? (
+          {isEditing ? (
+            <form onSubmit={(e) => handleSaveEdit(user._id, e)} className="space-y-4 mt-6">
               <div className="space-y-4">
                 {renderInput('username', '👤')}
                 {renderInput('phoneNumber', '📞')}
                 {renderInput('email', '✉️')}
                 {renderInput('address', '📍')}
               </div>
-            ) : (
-              <>
-                <UserInfoField icon="👤" value={user.username} />
-                <UserInfoField icon="📞" value={user.phoneNumber} />
-                <UserInfoField icon="✉️" value={user.email} />
-                {user.address && <UserInfoField icon="📍" value={user.address} />}
-              </>
-            )}
-          </div>
+            </form>
+          ) : (
+            <div className="space-y-4 mt-6">
+              <UserInfoField icon="👤" value={user.username} />
+              <UserInfoField icon="📞" value={user.phoneNumber} />
+              <UserInfoField icon="✉️" value={user.email} />
+              {user.address && <UserInfoField icon="📍" value={user.address} />}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-6 pt-6">
@@ -208,13 +213,15 @@ const UserManagement = () => {
         {isEditing && (
           <div className="flex justify-end gap-3 mt-6">
             <button
+              type="button"
               onClick={() => setEditingId(null)}
               className="px-6 py-2 border-2 border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-base"
             >
               Cancel
             </button>
             <button
-              onClick={() => handleSaveEdit(user._id)}
+              type="submit"
+              onClick={(e) => handleSaveEdit(user._id, e)}
               className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-base"
             >
               Save
@@ -225,172 +232,212 @@ const UserManagement = () => {
     );
   };
 
-  const CreateUserModal = () => (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isCreateModalOpen ? '' : 'hidden'}`}>
-      <div className="bg-white rounded-lg p-8 w-full max-w-4xl mx-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-medium">Create New User</h2>
-          <button 
-            onClick={() => setIsCreateModalOpen(false)} 
-            className="text-gray-500 text-2xl hover:text-gray-700"
-          >
-            ×
-          </button>
-        </div>
+  const CreateUserModal = () => {
+    // Create form reference to handle the submission properly
+    const formRef = React.useRef(null);
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <div>
-              <div className="text-base mb-2">Username</div>
-              <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-xl">👤</span>
-                <input
-                  type="text"
-                  name="username"
-                  value={newUser.username}
-                  onChange={handleInputChange(setNewUser)}
-                  className="flex-1 outline-none text-base"
-                  placeholder="Username"
-                />
-              </div>
-            </div>
+    // Function to handle tab navigation between fields instead of Enter submission
+    const handleInputKeyDown = (e, nextFieldRef) => {
+      if (e.key === 'Enter' && nextFieldRef) {
+        e.preventDefault();
+        nextFieldRef.current?.focus();
+      }
+    };
 
-            <div>
-              <div className="text-base mb-2">Email</div>
-              <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-xl">✉️</span>
-                <input
-                  type="email"
-                  name="email"
-                  value={newUser.email}
-                  onChange={handleInputChange(setNewUser)}
-                  className="flex-1 outline-none text-base"
-                  placeholder="Email"
-                />
-              </div>
-            </div>
+    // Create separate refs for each input field
+    const usernameRef = React.useRef(null);
+    const emailRef = React.useRef(null);
+    const passwordRef = React.useRef(null);
+    const phoneRef = React.useRef(null);
+    const addressRef = React.useRef(null);
+    const submitRef = React.useRef(null);
 
-            <div>
-              <div className="text-base mb-2">Password</div>
-              <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-xl">🔒</span>
-                <input
-                  type="password"
-                  name="password"
-                  value={newUser.password}
-                  onChange={handleInputChange(setNewUser)}
-                  className="flex-1 outline-none text-base"
-                  placeholder="Password"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-base mb-2">Phone Number</div>
-              <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-xl">📞</span>
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={newUser.phoneNumber}
-                  onChange={handleInputChange(setNewUser)}
-                  className="flex-1 outline-none text-base"
-                  placeholder="Phone Number"
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-base mb-2">Address</div>
-              <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-xl">📍</span>
-                <input
-                  type="text"
-                  name="address"
-                  value={newUser.address}
-                  onChange={handleInputChange(setNewUser)}
-                  className="flex-1 outline-none text-sm"
-                  placeholder="Address"
-                />
-              </div>
-            </div>
+    return (
+      <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isCreateModalOpen ? '' : 'hidden'}`}>
+        <div className="bg-white rounded-lg p-8 w-full max-w-4xl mx-4">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-medium">Create New User</h2>
+            <button 
+              type="button"
+              onClick={() => setIsCreateModalOpen(false)} 
+              className="text-gray-500 text-2xl hover:text-gray-700"
+            >
+              ×
+            </button>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.permissions.productManagement}
-                onChange={() => handlePermissionChange(setNewUser)('productManagement')}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm">Product Management</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.permissions.categoryManagement}
-                onChange={() => handlePermissionChange(setNewUser)('categoryManagement')}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm">Category Management</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.permissions.orderManagement}
-                onChange={() => handlePermissionChange(setNewUser)('orderManagement')}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm">Order Management</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.permissions.couponsManagement}
-                onChange={() => handlePermissionChange(setNewUser)('couponsManagement')}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm">Coupons Management</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.permissions.inventoryManagement}
-                onChange={() => handlePermissionChange(setNewUser)('inventoryManagement')}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm">Inventory Management</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newUser.permissions.marketingManagement}
-                onChange={() => handlePermissionChange(setNewUser)('marketingManagement')}
-                className="rounded border-gray-300"
-              />
-              <span className="text-sm">Marketing Management</span>
-            </div>
-          </div>
-        </div>
+          <form ref={formRef} onSubmit={handleCreateUser}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="space-y-6">
+                <div>
+                  <div className="text-base mb-2">Username</div>
+                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                    <span className="text-xl">👤</span>
+                    <input
+                      ref={usernameRef}
+                      type="text"
+                      name="username"
+                      value={newUser.username}
+                      onChange={handleInputChange(setNewUser)}
+                      onKeyDown={(e) => handleInputKeyDown(e, emailRef)}
+                      className="flex-1 outline-none text-base"
+                      placeholder="Username"
+                    />
+                  </div>
+                </div>
 
-        <div className="flex justify-end gap-2 mt-6">
-          <button
-            onClick={() => setIsCreateModalOpen(false)}
-            className="px-4 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleCreateUser}
-            className="px-4 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-          >
-            Create User
-          </button>
+                <div>
+                  <div className="text-base mb-2">Email</div>
+                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                    <span className="text-xl">✉️</span>
+                    <input
+                      ref={emailRef}
+                      type="email"
+                      name="email"
+                      value={newUser.email}
+                      onChange={handleInputChange(setNewUser)}
+                      onKeyDown={(e) => handleInputKeyDown(e, passwordRef)}
+                      className="flex-1 outline-none text-base"
+                      placeholder="Email"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-base mb-2">Password</div>
+                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                    <span className="text-xl">🔒</span>
+                    <input
+                      ref={passwordRef}
+                      type="password"
+                      name="password"
+                      value={newUser.password}
+                      onChange={handleInputChange(setNewUser)}
+                      onKeyDown={(e) => handleInputKeyDown(e, phoneRef)}
+                      className="flex-1 outline-none text-base"
+                      placeholder="Password"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-base mb-2">Phone Number</div>
+                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                    <span className="text-xl">📞</span>
+                    <input
+                      ref={phoneRef}
+                      type="text"
+                      name="phoneNumber"
+                      value={newUser.phoneNumber}
+                      onChange={handleInputChange(setNewUser)}
+                      onKeyDown={(e) => handleInputKeyDown(e, addressRef)}
+                      className="flex-1 outline-none text-base"
+                      placeholder="Phone Number"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-base mb-2">Address</div>
+                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                    <span className="text-xl">📍</span>
+                    <input
+                      ref={addressRef}
+                      type="text"
+                      name="address"
+                      value={newUser.address}
+                      onChange={handleInputChange(setNewUser)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                        }
+                      }}
+                      className="flex-1 outline-none text-base"
+                      placeholder="Address"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.productManagement}
+                    onChange={() => handlePermissionChange(setNewUser)('productManagement')}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Product Management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.categoryManagement}
+                    onChange={() => handlePermissionChange(setNewUser)('categoryManagement')}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Category Management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.orderManagement}
+                    onChange={() => handlePermissionChange(setNewUser)('orderManagement')}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Order Management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.couponsManagement}
+                    onChange={() => handlePermissionChange(setNewUser)('couponsManagement')}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Coupons Management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.inventoryManagement}
+                    onChange={() => handlePermissionChange(setNewUser)('inventoryManagement')}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Inventory Management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newUser.permissions.marketingManagement}
+                    onChange={() => handlePermissionChange(setNewUser)('marketingManagement')}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Marketing Management</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="px-4 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
+              >
+                Cancel
+              </button>
+              <button
+                ref={submitRef}
+                type="submit"
+                className="px-4 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                Create User
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="p-6">
@@ -399,6 +446,7 @@ const UserManagement = () => {
         <button
           onClick={() => setIsCreateModalOpen(true)}
           className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          type="button"
         >
           Create User
         </button>

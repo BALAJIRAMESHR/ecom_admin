@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Search, Plus, ChevronDown, X, Clock, ArrowLeft, Calendar } from "lucide-react";
 
+// API configuration
+const API_BASE_URL = "https://ecom-2-osny.onrender.com";
+
 // Utility functions
 const generateCouponId = () => {
   return `#UPA${Math.floor(1000 + Math.random() * 9000)}`;
@@ -18,27 +21,166 @@ const getCurrentDateTime = () => {
   return `${month} ${day}, ${time}`;
 };
 
+// API service functions
+const fetchCoupons = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/coupons`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch coupons");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching coupons:", error);
+    throw error;
+  }
+};
+
+const fetchCouponById = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/coupons/${id}`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch coupon");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching coupon:", error);
+    throw error;
+  }
+};
+
+const createNewCoupon = async (couponData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/coupons`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(couponData),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to create coupon");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error creating coupon:", error);
+    throw error;
+  }
+};
+
+const updateExistingCoupon = async (id, couponData) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/coupons/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(couponData),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to update coupon");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating coupon:", error);
+    throw error;
+  }
+};
+
+const deleteCouponById = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/coupons/${id}`, {
+      method: "DELETE",
+    });
+    if (!response.ok) {
+      throw new Error("Failed to delete coupon");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting coupon:", error);
+    throw error;
+  }
+};
+
+// Fetch products and categories from API
+const fetchProducts = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/products`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch products');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    throw error;
+  }
+};
+
+const fetchCategories = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/categories`);
+    if (!response.ok) {
+      throw new Error("Failed to fetch categories");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    throw error;
+  }
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    
+    return date.toLocaleString("default", { 
+      month: "short", 
+      day: "numeric",
+      year: "numeric"
+    });
+  } catch (e) {
+    console.error("Date formatting error:", e);
+    return dateString;
+  }
+};
+
+
 // Product Selection Popup Component
 const ProductSelectionPopup = ({ onClose, onSelect }) => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectAll, setSelectAll] = useState(false);
-  const [categories, setCategories] = useState([
-    { _id: "cat1", categoryName: "Electronics" },
-    { _id: "cat2", categoryName: "Clothing" },
-    { _id: "cat3", categoryName: "Home & Kitchen" }
-  ]);
-  const [products, setProducts] = useState([
-    { _id: "p1", productName: "Smartphone", categoryId: { _id: "cat1" }, actualPrice: 15000, sellingPrice: 12999, images: ["/api/placeholder/100/100"] },
-    { _id: "p2", productName: "Laptop", categoryId: { _id: "cat1" }, actualPrice: 45000, sellingPrice: 39999, images: ["/api/placeholder/100/100"] },
-    { _id: "p3", productName: "T-shirt", categoryId: { _id: "cat2" }, actualPrice: 999, sellingPrice: 799, images: ["/api/placeholder/100/100"] },
-    { _id: "p4", productName: "Cookware Set", categoryId: { _id: "cat3" }, actualPrice: 2500, sellingPrice: 1999, images: ["/api/placeholder/100/100"] }
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch products and categories on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [productsData, categoriesData] = await Promise.all([
+          fetchProducts(),
+          fetchCategories()
+        ]);
+        setProducts(productsData);
+        setCategories(categoriesData);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to load products. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = product.productName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !selectedCategory || product.categoryId?._id === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -115,6 +257,8 @@ const ProductSelectionPopup = ({ onClose, onSelect }) => {
           <div className="max-h-64 overflow-y-auto border rounded-lg">
             {loading ? (
               <div className="p-4 text-center text-gray-500">Loading products...</div>
+            ) : error ? (
+              <div className="p-4 text-center text-red-500">{error}</div>
             ) : filteredProducts.length === 0 ? (
               <div className="p-4 text-center text-gray-500">No products found</div>
             ) : (
@@ -165,6 +309,7 @@ const ProductSelectionPopup = ({ onClose, onSelect }) => {
               onClose();
             }}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            disabled={loading || selectedProducts.length === 0}
           >
             Create coupon
           </button>
@@ -175,9 +320,11 @@ const ProductSelectionPopup = ({ onClose, onSelect }) => {
 };
 
 // New Coupon Form Component
-const CreateCouponForm = () => {
+const CreateCouponForm = ({ onSave, onBack }) => {
   const [showProductSelection, setShowProductSelection] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     type: "FixedAmount", // Default to fixed amount as shown in mockup
@@ -185,9 +332,13 @@ const CreateCouponForm = () => {
     duration: "Forever",
     limitDateRange: false,
     limitTotalRedemptions: false,
+    totalRedemptions: "",
     startDate: "",
     endDate: "",
-    useCustomerFacingCodes: false
+    useCustomerFacingCodes: false,
+    code: "",
+    currency: "INR",
+    products: []
   });
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
   const [showDurationDropdown, setShowDurationDropdown] = useState(false);
@@ -197,6 +348,7 @@ const CreateCouponForm = () => {
 
   const handleCurrencySelect = (currency) => {
     setSelectedCurrency(currency);
+    setFormData({ ...formData, currency });
     setShowCurrencyDropdown(false);
   };
 
@@ -215,23 +367,67 @@ const CreateCouponForm = () => {
     }
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    // Logic to submit form data
-    console.log("Form submitted:", formData);
-    // Reset form or redirect to coupons list
-    window.history.back();
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Prepare data for API
+      const couponData = {
+        name: formData.name,
+        type: formData.type,
+        discount: formData.type === "Percentage" ? formData.discountAmount + "%" : formData.discountAmount,
+        currency: formData.currency,
+        duration: formData.duration,
+        startDate: formData.limitDateRange ? formData.startDate : null,
+        endDate: formData.limitDateRange ? formData.endDate : null,
+        maxRedemptions: formData.limitTotalRedemptions ? parseInt(formData.totalRedemptions) : null,
+        code: formData.useCustomerFacingCodes ? formData.code : generateCouponId(),
+        products: selectedProducts,
+        additionalCurrencies: additionalCurrencies
+      };
+      
+      const result = await createNewCoupon(couponData);
+      setLoading(false);
+      
+      if (onSave) {
+        onSave(result);
+      }
+      
+      // Navigate back to the coupons list
+      if (onBack) {
+        onBack();
+      } else {
+        window.history.back();
+      }
+      
+    } catch (err) {
+      setLoading(false);
+      setError("Failed to create coupon. Please try again.");
+      console.error("Error creating coupon:", err);
+    }
   };
 
   return (
     <div className="w-full max-w-5xl mx-auto p-6">
       <div className="flex items-center mb-4">
-        <button onClick={() => window.history.back()} className="flex items-center text-purple-600 hover:text-purple-700">
+        <button 
+          onClick={onBack || (() => window.history.back())} 
+          className="flex items-center text-purple-600 hover:text-purple-700"
+        >
           <ArrowLeft size={20} className="mr-2" />
           Back
         </button>
         <h1 className="text-3xl font-bold ml-4">Create Coupons</h1>
       </div>
+      
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+          <p>{error}</p>
+        </div>
+      )}
       
       <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
         <div className="mb-6">
@@ -250,6 +446,7 @@ const CreateCouponForm = () => {
               placeholder="First purchase discount"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
             />
           </div>
           
@@ -294,6 +491,7 @@ const CreateCouponForm = () => {
                       placeholder="0"
                       value={formData.discountAmount}
                       onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
+                      required
                     />
                     <div className="flex items-center px-3 py-2 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg">
                       <span>%</span>
@@ -308,6 +506,7 @@ const CreateCouponForm = () => {
                       placeholder="0.00"
                       value={formData.discountAmount}
                       onChange={(e) => setFormData({ ...formData, discountAmount: e.target.value })}
+                      required
                     />
                     <button
                       type="button"
@@ -470,6 +669,7 @@ const CreateCouponForm = () => {
                           className="w-full p-2 border rounded-lg"
                           value={formData.startDate}
                           onChange={(e) => setFormData({...formData, startDate: e.target.value})}
+                          required={formData.limitDateRange}
                         />
                         <Calendar className="absolute right-3 top-3 text-gray-400" size={16} />
                       </div>
@@ -482,6 +682,7 @@ const CreateCouponForm = () => {
                           className="w-full p-2 border rounded-lg"
                           value={formData.endDate}
                           onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+                          required={formData.limitDateRange}
                         />
                         <Calendar className="absolute right-3 top-3 text-gray-400" size={16} />
                       </div>
@@ -507,6 +708,9 @@ const CreateCouponForm = () => {
                     className="w-56 p-2 border rounded-lg"
                     placeholder="Maximum redemptions"
                     min="1"
+                    value={formData.totalRedemptions}
+                    onChange={(e) => setFormData({...formData, totalRedemptions: e.target.value})}
+                    required={formData.limitTotalRedemptions}
                   />
                 </div>
               )}
@@ -536,6 +740,9 @@ const CreateCouponForm = () => {
                   type="text"
                   className="w-56 p-2 border rounded-lg"
                   placeholder="WELCOME10"
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                  required={formData.useCustomerFacingCodes}
                 />
                 <p className="mt-1 text-sm text-gray-500">Customers will need to enter this code at checkout</p>
               </div>
@@ -546,16 +753,18 @@ const CreateCouponForm = () => {
           <div className="flex justify-end mt-8 gap-4">
             <button
               type="button"
-              onClick={() => window.history.back()}
+              onClick={onBack || (() => window.history.back())}
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="submit"
               className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              disabled={loading}
             >
-              Create coupon
+              {loading ? "Creating..." : "Create coupon"}
             </button>
           </div>
         </form>
@@ -574,309 +783,480 @@ const CreateCouponForm = () => {
     </div>
   );
 };
+// Continuing from where the code left off - completing the CouponCard component
 
-// Coupon Card Component
 const CouponCard = ({
+  _id,
   name,
   discount,
-  product,
+  products,
   startDate,
   endDate,
   code,
   createdAt,
   onClick,
-}) => (
-  <div className="relative cursor-pointer group" onClick={onClick}>
-    <div className="bg-purple-500 rounded-xl p-4 text-white relative overflow-hidden hover:bg-purple-600 transition-colors">
-      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-white rounded-r-full" />
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-6 bg-white rounded-l-full" />
+}) => {
+  // Format dates if they are full ISO date strings
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return dateString;
+      
+      return date.toLocaleString("default", { 
+        month: "short", 
+        day: "numeric" 
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
 
-      <div className="flex justify-between items-start">
-        <div className="space-y-1">
-          <h3 className="font-semibold">{name || "First Purchase Discount"}</h3>
-          <p className="text-sm text-purple-100">{product}</p>
-          <p className="text-sm text-purple-100">
-            {startDate} - {endDate}
-          </p>
-          <p className="text-sm text-purple-100">{code}</p>
-          {createdAt && (
-            <div className="flex items-center text-purple-100 text-xs mt-2">
-              <Clock size={14} className="mr-1" />
-              {createdAt}
+  const formattedStartDate = formatDate(startDate);
+  const formattedEndDate = formatDate(endDate);
+  
+  return (
+    <div className="relative cursor-pointer group" onClick={() => onClick(_id)}>
+      <div className="bg-purple-500 rounded-xl p-4 text-white relative overflow-hidden hover:bg-purple-600 transition-colors">
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-12 bg-purple-300 rounded-r-full"></div>
+        
+        <div className="ml-4">
+          <div className="text-lg font-semibold mb-1">{name || "Unnamed Coupon"}</div>
+          <div className="text-2xl font-bold mb-3">{discount || "0% off"}</div>
+          
+          <div className="flex items-center text-sm opacity-80 mb-1">
+            <Clock size={14} className="mr-1" />
+            <span className="mr-1">Created</span>
+            <span>{getCurrentDateTime()}</span>
+          </div>
+          
+          {(formattedStartDate && formattedEndDate) && (
+            <div className="text-sm opacity-80 mb-1">
+              Valid: {formattedStartDate} - {formattedEndDate}
             </div>
           )}
-        </div>
-        <div className="text-6xl font-bold mr-8 mt-4">
-          {discount}
-          <span className="block text-base font-normal">off</span>
-        </div>
-      </div>
-    </div>
-
-    <div className="absolute -left-1.5 top-0 bottom-0 w-3 flex flex-col justify-around">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="w-3 h-3 bg-white rounded-full" />
-      ))}
-    </div>
-    <div className="absolute -right-1.5 top-0 bottom-0 w-3 flex flex-col justify-around">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="w-3 h-3 bg-white rounded-full" />
-      ))}
-    </div>
-  </div>
-);
-
-// Coupon Ticket Detail Component
-const CouponTicket = ({ coupon, onBack }) => {
-  const {
-    name = "First Purchase Discount",
-    product = "All Products",
-    discount = "30%",
-    startDate = "Oct 2nd",
-    endDate = "Oct 24th",
-    id = generateCouponId(),
-    createdAt = getCurrentDateTime(),
-  } = coupon || {};
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={onBack}
-            className="flex items-center text-purple-600 hover:text-purple-700 font-medium"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            Back
-          </button>
-        </div>
-
-        <div className="relative">
-          <div className="bg-purple-500 rounded-xl p-6 text-white relative overflow-hidden">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white rounded-r-full" />
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-4 h-8 bg-white rounded-l-full" />
-
-            <div className="flex justify-between items-start">
-              <div className="space-y-2">
-                <h3 className="text-xl font-semibold">{name}</h3>
-                <p className="text-purple-100">{product}</p>
-                <p className="text-purple-100">
-                  {startDate} - {endDate}
-                </p>
-                <p className="text-purple-100">{id}</p>
-                <div className="flex items-center text-purple-100 text-sm mt-4">
-                  <Clock size={16} className="mr-2" />
-                  {createdAt}
-                </div>
-              </div>
-
-              <div className="text-4xl font-bold">
-                {discount}
-                <span className="block text-xl font-normal">off</span>
-              </div>
+          
+          {products?.length > 0 && (
+            <div className="text-sm opacity-80 mb-1">
+              Applies to {products.length} product{products.length !== 1 ? 's' : ''}
             </div>
-
-            <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                />
-                <path
-                  d="M50 10 L50 90 M10 50 L90 50"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                />
-              </svg>
+          )}
+          
+          {code && (
+            <div className="mt-2 inline-block bg-purple-400 rounded px-2 py-1 text-xs font-mono">
+              {code}
             </div>
-          </div>
-
-          <div className="absolute -left-2 top-0 bottom-0 w-4 flex flex-col justify-around">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="w-4 h-4 bg-white rounded-full" />
-            ))}
-          </div>
-          <div className="absolute -right-2 top-0 bottom-0 w-4 flex flex-col justify-around">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="w-4 h-4 bg-white rounded-full" />
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-8 space-y-6">
-          <div>
-            <h4 className="text-lg font-semibold mb-2">Coupon Details</h4>
-            <p className="text-gray-600">
-              This coupon provides a {discount} discount on {product}. Valid
-              from {startDate} to {endDate}.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="text-lg font-semibold mb-2">How to Use</h4>
-            <ol className="list-decimal list-inside space-y-2 text-gray-600">
-              <li>Copy the coupon code: {id}</li>
-              <li>Apply it at checkout</li>
-              <li>Enjoy your discount!</li>
-            </ol>
-          </div>
-
-          <div>
-            <h4 className="text-lg font-semibold mb-2">Terms & Conditions</h4>
-            // Continuation of the Terms & Conditions section in CouponTicket component
-            <ul className="list-disc list-inside space-y-2 text-gray-600">
-              <li>Cannot be combined with other offers</li>
-              <li>Valid for the specified date range only</li>
-              <li>Limited to one use per customer</li>
-              <li>Not redeemable for cash</li>
-            </ul>
-          </div>
-
-          <div className="pt-4 pb-6">
-            <button className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
-              Copy Coupon Code
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-// Coupons List Component
-const CouponsList = () => {
-  const [coupons, setCoupons] = useState([
-    {
-      id: generateCouponId(),
-      name: "First Purchase Discount",
-      discount: "30%",
-      product: "All Products",
-      startDate: "Oct 2nd",
-      endDate: "Oct 24th",
-      code: "WELCOME30",
-      createdAt: "Oct 15, 2:30 PM"
-    },
-    {
-      id: generateCouponId(),
-      name: "Holiday Special",
-      discount: "₹500",
-      product: "Electronics",
-      startDate: "Dec 1st",
-      endDate: "Dec 31st",
-      code: "HOLIDAY500",
-      createdAt: "Oct 12, 11:45 AM"
-    },
-    {
-      id: generateCouponId(),
-      name: "Weekend Sale",
-      discount: "15%",
-      product: "Clothing",
-      startDate: "Every Weekend",
-      endDate: "Ongoing",
-      code: "WEEKEND15",
-      createdAt: "Oct 10, 9:20 AM"
+// CouponDetail Component for viewing a single coupon
+const CouponDetail = ({ couponId, onBack, onEdit, onDelete }) => {
+  const [coupon, setCoupon] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchCouponDetails = async () => {
+      try {
+        setLoading(true);
+        const couponData = await fetchCouponById(couponId);
+        setCoupon(couponData);
+        
+        // If the coupon has product IDs, fetch the product details
+        if (couponData.products && couponData.products.length > 0) {
+          const productsData = await fetchProducts();
+          const filteredProducts = productsData.filter(p => 
+            couponData.products.includes(p._id)
+          );
+          setProducts(filteredProducts);
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error fetching coupon details:", err);
+        setError("Failed to load coupon details");
+        setLoading(false);
+      }
+    };
+
+    if (couponId) {
+      fetchCouponDetails();
     }
-  ]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  }, [couponId]);
 
-  const filteredCoupons = coupons.filter(coupon => 
-    coupon.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const handleDelete = async () => {
+    try {
+      setLoading(true);
+      await deleteCouponById(couponId);
+      setLoading(false);
+      setDeleteModalOpen(false);
+      
+      if (onBack) {
+        onBack();
+      }
+    } catch (err) {
+      console.error("Error deleting coupon:", err);
+      setError("Failed to delete coupon");
+      setLoading(false);
+      setDeleteModalOpen(false);
+    }
+  };
 
-  if (selectedCoupon) {
-    return <CouponTicket coupon={selectedCoupon} onBack={() => setSelectedCoupon(null)} />;
+  if (loading) {
+    return <div className="flex items-center justify-center h-64">Loading coupon details...</div>;
   }
 
-  if (showCreateForm) {
-    return <CreateCouponForm onBack={() => setShowCreateForm(false)} />;
+  if (error) {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <p>{error}</p>
+        <button 
+          onClick={onBack} 
+          className="mt-3 bg-red-500 text-white px-4 py-2 rounded"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!coupon) {
+    return (
+      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+        <p>Coupon not found</p>
+        <button 
+          onClick={onBack} 
+          className="mt-3 bg-yellow-500 text-white px-4 py-2 rounded"
+        >
+          Go Back
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Coupons</h1>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-          >
-            <Plus size={20} className="mr-2" />
-            Create coupon
-          </button>
+    <div className="w-full max-w-5xl mx-auto p-6">
+      <div className="flex items-center mb-6">
+        <button 
+          onClick={onBack} 
+          className="flex items-center text-purple-600 hover:text-purple-700"
+        >
+          <ArrowLeft size={20} className="mr-2" />
+          Back to coupons
+        </button>
+      </div>
+      
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <h1 className="text-2xl font-bold mb-2">{coupon.name}</h1>
+            <div className="text-gray-600">
+              {coupon.code && (
+                <span className="bg-gray-100 px-3 py-1 rounded-full text-sm font-mono">
+                  {coupon.code}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex space-x-3">
+            <button
+              onClick={() => onEdit(couponId)}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+            >
+              Edit
+            </button>
+            <button
+              onClick={() => setDeleteModalOpen(true)}
+              className="px-4 py-2 border border-red-300 rounded-lg text-red-600 hover:bg-red-50"
+            >
+              Delete
+            </button>
+          </div>
         </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Coupon Details</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="text-sm text-gray-500">Discount</div>
+                <div className="font-medium">{coupon.discount}</div>
+              </div>
+              
+              <div>
+                <div className="text-sm text-gray-500">Duration</div>
+                <div className="font-medium">{coupon.duration || "Forever"}</div>
+              </div>
+              
+              {(coupon.startDate || coupon.endDate) && (
+                <div>
+                  <div className="text-sm text-gray-500">Valid Period</div>
+                  <div className="font-medium">
+                    {coupon.startDate ? formatDate(coupon.startDate) : "Anytime"} - {coupon.endDate ? formatDate(coupon.endDate) : "Forever"}
+                  </div>
+                </div>
+              )}
+              
+              {coupon.maxRedemptions && (
+                <div>
+                  <div className="text-sm text-gray-500">Maximum Redemptions</div>
+                  <div className="font-medium">{coupon.maxRedemptions}</div>
+                </div>
+              )}
+              
+              <div>
+                <div className="text-sm text-gray-500">Created At</div>
+                <div className="font-medium">{formatDate(coupon.createdAt)}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Applied Products</h2>
+            
+            {products.length === 0 ? (
+              <div className="text-gray-500">
+                Applied to all products
+              </div>
+            ) : (
+              <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
+                {products.map(product => (
+                  <div key={product._id} className="flex items-center p-3">
+                    <img
+                      src={product.images?.[0] || "/api/placeholder/60/60"}
+                      alt={product.productName}
+                      className="w-12 h-12 object-cover rounded mr-3"
+                      onError={(e) => {
+                        e.target.src = "/api/placeholder/60/60";
+                      }}
+                    />
+                    <div>
+                      <div className="font-medium">{product.productName}</div>
+                      <div className="text-sm text-gray-600">
+                        MRP ₹{product.actualPrice} ₹{product.sellingPrice}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-3">Delete Coupon</h3>
+            <p className="mb-4">
+              Are you sure you want to delete the coupon "{coupon.name}"? This action cannot be undone.
+            </p>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg"
+                disabled={loading}
+              >
+                {loading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
+// Main Coupons List Component
+const CouponsList = () => {
+  const [coupons, setCoupons] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCoupon, setSelectedCoupon] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editCouponId, setEditCouponId] = useState(null);
+
+  useEffect(() => {
+    loadCoupons();
+  }, []);
+
+  const loadCoupons = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchCoupons();
+      setCoupons(data);
+      setLoading(false);
+    } catch (err) {
+      console.error("Error loading coupons:", err);
+      setError("Failed to load coupons. Please try again later.");
+      setLoading(false);
+    }
+  };
+
+  const filteredCoupons = coupons.filter(coupon => 
+    coupon.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    coupon.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCouponClick = (id) => {
+    setSelectedCoupon(id);
+  };
+
+  const handleCreateSuccess = () => {
+    loadCoupons();
+    setShowCreateForm(false);
+  };
+
+  const handleEditCoupon = (id) => {
+    setEditCouponId(id);
+    setSelectedCoupon(null);
+  };
+
+  if (showCreateForm) {
+    return (
+      <CreateCouponForm 
+        onSave={handleCreateSuccess}
+        onBack={() => setShowCreateForm(false)}
+      />
+    );
+  }
+
+  if (editCouponId) {
+    // This would ideally be an EditCouponForm component
+    // For simplicity, we're reusing the CreateCouponForm
+    return (
+      <CreateCouponForm 
+        couponId={editCouponId}
+        onSave={handleCreateSuccess}
+        onBack={() => {
+          setEditCouponId(null);
+          loadCoupons();
+        }}
+      />
+    );
+  }
+
+  if (selectedCoupon) {
+    return (
+      <CouponDetail 
+        couponId={selectedCoupon}
+        onBack={() => {
+          setSelectedCoupon(null);
+          loadCoupons();
+        }}
+        onEdit={handleEditCoupon}
+        onDelete={() => {
+          setSelectedCoupon(null);
+          loadCoupons();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Coupons</h1>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          <Plus size={20} className="mr-2" />
+          Create coupon
+        </button>
+      </div>
+      
+      <div className="bg-white shadow-sm rounded-lg border border-gray-200 p-6">
+        {/* Search Bar */}
         <div className="mb-6 relative">
           <input
             type="text"
-            className="w-full p-3 pl-10 border border-gray-300 rounded-lg"
             placeholder="Search coupons..."
+            className="w-full p-3 pl-10 border border-gray-300 rounded-lg"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Search className="absolute left-3 top-3.5 text-gray-400" size={18} />
+          <Search className="absolute left-3 top-3 text-gray-400" size={20} />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-          {filteredCoupons.length > 0 ? (
-            filteredCoupons.map((coupon) => (
-              <CouponCard
-                key={coupon.id}
-                {...coupon}
-                onClick={() => setSelectedCoupon(coupon)}
-              />
-            ))
-          ) : (
-            <div className="col-span-3 text-center py-12 text-gray-500">
-              No coupons found. Create your first coupon to get started.
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            <p>{error}</p>
+            <button 
+              onClick={loadCoupons}
+              className="mt-2 bg-red-500 text-white px-3 py-1 rounded text-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+        
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mb-3"></div>
+            <p className="text-gray-500">Loading coupons...</p>
+          </div>
+        ) : filteredCoupons.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-3">
+              <Search size={48} className="mx-auto opacity-50" />
             </div>
-          )}
-        </div>
+            {searchTerm ? (
+              <p className="text-gray-500">No coupons found matching "{searchTerm}"</p>
+            ) : (
+              <div>
+                <p className="text-gray-500 mb-3">No coupons created yet</p>
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  Create your first coupon
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredCoupons.map((coupon) => (
+              <CouponCard
+                key={coupon._id}
+                {...coupon}
+                onClick={handleCouponClick}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 // Main App Component
-const CouponManagementApp = () => {
-  const [view, setView] = useState("list"); // list, detail, create
-  const [selectedCoupon, setSelectedCoupon] = useState(null);
-
-  const renderView = () => {
-    switch (view) {
-      case "detail":
-        return (
-          <CouponTicket
-            coupon={selectedCoupon}
-            onBack={() => setView("list")}
-          />
-        );
-      case "create":
-        return <CreateCouponForm onBack={() => setView("list")} />;
-      default:
-        return (
-          <CouponsList
-            onSelectCoupon={(coupon) => {
-              setSelectedCoupon(coupon);
-              setView("detail");
-            }}
-            onCreateCoupon={() => setView("create")}
-          />
-        );
-    }
-  };
-
+const CouponManagement = () => {
   return (
     <div className="min-h-screen bg-gray-50">
-      {renderView()}
+      <CouponsList />
     </div>
   );
 };
 
-export default CouponManagementApp;
+export default CouponManagement;
