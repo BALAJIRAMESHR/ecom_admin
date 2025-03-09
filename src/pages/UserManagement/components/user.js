@@ -232,212 +232,212 @@ const UserManagement = () => {
     );
   };
 
-  const CreateUserModal = () => {
-    // Create form reference to handle the submission properly
-    const formRef = React.useRef(null);
+const CreateUserModal = () => {
+  // Create form reference to handle the submission properly
+  const formRef = React.useRef(null);
 
-    // Function to handle tab navigation between fields instead of Enter submission
-    const handleInputKeyDown = (e, nextFieldRef) => {
-      if (e.key === 'Enter' && nextFieldRef) {
-        e.preventDefault();
-        nextFieldRef.current?.focus();
-      }
-    };
+  // Function to handle tab navigation between fields instead of Enter submission
+  const handleInputKeyDown = (e, nextFieldRef) => {
+    if (e.key === 'Enter' && nextFieldRef) {
+      e.preventDefault();
+      nextFieldRef.current?.focus();
+    }
+  };
 
-    // Create separate refs for each input field
-    const usernameRef = React.useRef(null);
-    const emailRef = React.useRef(null);
-    const passwordRef = React.useRef(null);
-    const phoneRef = React.useRef(null);
-    const addressRef = React.useRef(null);
-    const submitRef = React.useRef(null);
+  // Create separate refs for each input field
+  const usernameRef = React.useRef(null);
+  const emailRef = React.useRef(null);
+  const passwordRef = React.useRef(null);
+  const phoneRef = React.useRef(null);
+  const addressRef = React.useRef(null);
+  const submitRef = React.useRef(null);
 
-    return (
-      <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isCreateModalOpen ? '' : 'hidden'}`}>
-        <div className="bg-white rounded-lg p-8 w-full max-w-4xl mx-4">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-medium">Create New User</h2>
-            <button 
-              type="button"
-              onClick={() => setIsCreateModalOpen(false)} 
-              className="text-gray-500 text-2xl hover:text-gray-700"
-            >
-              ×
-            </button>
+  return (
+    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isCreateModalOpen ? '' : 'hidden'}`}>
+      <div className="bg-white rounded-lg p-8 w-full max-w-4xl mx-4">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl font-medium">Create New User</h2>
+          <button 
+            type="button"
+            onClick={() => setIsCreateModalOpen(false)} 
+            className="text-gray-500 text-2xl hover:text-gray-700"
+          >
+            ×
+          </button>
+        </div>
+
+        <form ref={formRef} onSubmit={handleCreateUser}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div>
+                <div className="text-base mb-2">Username</div>
+                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                  <span className="text-xl">👤</span>
+                  <input
+                    ref={usernameRef}
+                    type="text"
+                    name="username"
+                    // value={newUser.username}
+                    // onChange={handleInputChange(setNewUser)}
+                    // onKeyDown={(e) => handleInputKeyDown(e, emailRef)}
+                    className="flex-1 outline-none text-base"
+                    placeholder="Username"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="text-base mb-2">Email</div>
+                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                  <span className="text-xl">✉️</span>
+                <input type='email' ref={emailRef} name="username" className="flex-1 outline-none text-base"></input>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-base mb-2">Password</div>
+                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                  <span className="text-xl">🔒</span>
+                  <input
+                    ref={passwordRef}
+                    type="password"
+                    name="password"
+                    // value={newUser.password}
+                    // onChange={handleInputChange(setNewUser)}
+                    // onKeyDown={(e) => handleInputKeyDown(e, phoneRef)}
+                    className="flex-1 outline-none text-base"
+                    placeholder="Password"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="text-base mb-2">Phone Number</div>
+                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                  <span className="text-xl">📞</span>
+                  <input
+                    ref={phoneRef}
+                    type="text"
+                    name="phoneNumber"
+                    // value={newUser.phoneNumber}
+                    // onChange={handleInputChange(setNewUser)}
+                    // onKeyDown={(e) => handleInputKeyDown(e, addressRef)}
+                    className="flex-1 outline-none text-base"
+                    placeholder="Phone Number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="text-base mb-2">Address</div>
+                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
+                  <span className="text-xl">📍</span>
+                  <input
+                    ref={addressRef}
+                    type="text"
+                    name="address"
+                    // value={newUser.address}
+                    // onChange={handleInputChange(setNewUser)}
+                    // onKeyDown={(e) => {
+                    //   if (e.key === 'Enter') {
+                    //     e.preventDefault();
+                    //   }
+                    // }}
+                    className="flex-1 outline-none text-base"
+                    placeholder="Address"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.productManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('productManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Product Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.categoryManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('categoryManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Category Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.orderManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('orderManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Order Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.couponsManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('couponsManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Coupons Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.inventoryManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('inventoryManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Inventory Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.marketingManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('marketingManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">Marketing Management</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={newUser.permissions.userManagement}
+                  onChange={() => handlePermissionChange(setNewUser)('userManagement')}
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm">User Management</span>
+              </div>
+            </div>
           </div>
 
-          <form ref={formRef} onSubmit={handleCreateUser}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="space-y-6">
-                <div>
-                  <div className="text-base mb-2">Username</div>
-                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                    <span className="text-xl">👤</span>
-                    <input
-                      ref={usernameRef}
-                      type="text"
-                      name="username"
-                      value={newUser.username}
-                      onChange={handleInputChange(setNewUser)}
-                      onKeyDown={(e) => handleInputKeyDown(e, emailRef)}
-                      className="flex-1 outline-none text-base"
-                      placeholder="Username"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-base mb-2">Email</div>
-                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                    <span className="text-xl">✉️</span>
-                    <input
-                      ref={emailRef}
-                      type="email"
-                      name="email"
-                      value={newUser.email}
-                      onChange={handleInputChange(setNewUser)}
-                      onKeyDown={(e) => handleInputKeyDown(e, passwordRef)}
-                      className="flex-1 outline-none text-base"
-                      placeholder="Email"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-base mb-2">Password</div>
-                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                    <span className="text-xl">🔒</span>
-                    <input
-                      ref={passwordRef}
-                      type="password"
-                      name="password"
-                      value={newUser.password}
-                      onChange={handleInputChange(setNewUser)}
-                      onKeyDown={(e) => handleInputKeyDown(e, phoneRef)}
-                      className="flex-1 outline-none text-base"
-                      placeholder="Password"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-base mb-2">Phone Number</div>
-                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                    <span className="text-xl">📞</span>
-                    <input
-                      ref={phoneRef}
-                      type="text"
-                      name="phoneNumber"
-                      value={newUser.phoneNumber}
-                      onChange={handleInputChange(setNewUser)}
-                      onKeyDown={(e) => handleInputKeyDown(e, addressRef)}
-                      className="flex-1 outline-none text-base"
-                      placeholder="Phone Number"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="text-base mb-2">Address</div>
-                  <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                    <span className="text-xl">📍</span>
-                    <input
-                      ref={addressRef}
-                      type="text"
-                      name="address"
-                      value={newUser.address}
-                      onChange={handleInputChange(setNewUser)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                        }
-                      }}
-                      className="flex-1 outline-none text-base"
-                      placeholder="Address"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newUser.permissions.productManagement}
-                    onChange={() => handlePermissionChange(setNewUser)('productManagement')}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Product Management</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newUser.permissions.categoryManagement}
-                    onChange={() => handlePermissionChange(setNewUser)('categoryManagement')}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Category Management</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newUser.permissions.orderManagement}
-                    onChange={() => handlePermissionChange(setNewUser)('orderManagement')}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Order Management</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newUser.permissions.couponsManagement}
-                    onChange={() => handlePermissionChange(setNewUser)('couponsManagement')}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Coupons Management</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newUser.permissions.inventoryManagement}
-                    onChange={() => handlePermissionChange(setNewUser)('inventoryManagement')}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Inventory Management</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={newUser.permissions.marketingManagement}
-                    onChange={() => handlePermissionChange(setNewUser)('marketingManagement')}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Marketing Management</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="px-4 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
-              >
-                Cancel
-              </button>
-              <button
-                ref={submitRef}
-                type="submit"
-                className="px-4 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-              >
-                Create User
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="flex justify-end gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => setIsCreateModalOpen(false)}
+              className="px-4 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
+            >
+              Cancel
+            </button>
+            <button
+              ref={submitRef}
+              type="submit"
+              className="px-4 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            >
+              Create User
+            </button>
+          </div>
+        </form>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <div className="p-6">

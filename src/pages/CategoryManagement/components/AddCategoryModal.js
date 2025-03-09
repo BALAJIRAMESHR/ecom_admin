@@ -7,6 +7,8 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
   const [previewImage, setPreviewImage] = useState(null);
   const [subcategories, setSubcategories] = useState([]);
   const [subcategoryName, setSubcategoryName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Initialize form with data if editing
   useEffect(() => {
@@ -67,7 +69,7 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
     setSubcategories(updatedSubcategories);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!categoryName.trim()) {
       alert("Please enter a category name");
       return;
@@ -78,10 +80,64 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
       return;
     }
 
-    // Use the selected image or the existing one if editing
-    const imageToUse = selectedImage || (isEditing ? previewImage : null);
+    setIsLoading(true);
+    setError(null);
 
-    onAdd(categoryName, imageToUse, categoryType, subcategories);
+    try {
+      // Create FormData object for file upload
+      const formData = new FormData();
+      formData.append("categoryName", categoryName);
+      formData.append("categoryType", categoryType);
+      formData.append("subcategories", JSON.stringify(subcategories));
+      
+      // If there's a new image selected, append it
+      if (selectedImage) {
+        formData.append("categoryImage", selectedImage);
+      } else if (isEditing && previewImage && typeof previewImage === 'string') {
+        // If editing and using existing image, we may need to handle this differently
+        // depending on how your API expects updates to existing images
+        formData.append("existingImageUrl", previewImage);
+      }
+
+      // Add ID if editing
+      if (isEditing && initialData._id) {
+        formData.append("categoryId", initialData._id);
+      }
+
+      // Determine the endpoint based on whether we're adding or editing
+      const endpoint = isEditing 
+        ? `https://ecom-2-osny.onrender.com/updatecategory/${initialData._id}`
+        : "https://ecom-2-osny.onrender.com/addcategory";
+      
+      // Determine the HTTP method
+      const method = isEditing ? "PUT" : "POST";
+
+      // Make the API request
+      const response = await fetch(endpoint, {
+        method,
+        body: formData,
+        // Don't set Content-Type header when using FormData
+        // The browser will set it automatically with the correct boundary
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save category");
+      }
+
+      const result = await response.json();
+      
+      // Call the onAdd callback with the result from the server
+      onAdd(result);
+      
+      // Close the modal
+      onClose();
+    } catch (err) {
+      setError(err.message || "An error occurred while saving the category");
+      console.error("Error saving category:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -171,6 +227,7 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
             value={subcategoryName}
             onChange={(e) => setSubcategoryName(e.target.value)}
             className="w-full px-3 py-2 border rounded-md mb-2"
+            onKeyPress={(e) => e.key === 'Enter' && addSubcategory()}
           />
           
           <button
@@ -198,19 +255,38 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
           )}
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className="flex justify-end gap-2 mt-4">
           <button
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            disabled={isLoading}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+            className={`px-4 py-2 ${isLoading ? 'bg-purple-400' : 'bg-purple-600 hover:bg-purple-700'} text-white rounded-md flex items-center justify-center`}
+            disabled={isLoading}
           >
-            {isEditing ? "Save Changes" : "Add"}
+            {isLoading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {isEditing ? "Saving..." : "Adding..."}
+              </>
+            ) : (
+              isEditing ? "Save Changes" : "Add"
+            )}
           </button>
         </div>
       </div>
