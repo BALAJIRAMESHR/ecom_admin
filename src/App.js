@@ -119,7 +119,7 @@ const router = createBrowserRouter(
 
       {/* Protecting User Management page */}
       <Route
-        path="/user-management"
+        path="/usermanagement"
         element={
           <ProtectedRoute>
             <UserManagementRoute>

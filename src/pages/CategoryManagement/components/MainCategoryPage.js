@@ -31,15 +31,10 @@ const CategoryManagement = () => {
   };
 
   const uploadImage = async (imageFile) => {
-    try {
-      console.log('Starting image upload...', imageFile);
-      
-      // If imageFile is already a URL, return it directly
+    try {      
       if (typeof imageFile === 'string' && imageFile.startsWith('http')) {
         return imageFile;
       }
-
-      // Validate file
       if (!imageFile || !imageFile.type.startsWith('image/')) {
         throw new Error('Please select a valid image file');
       }
@@ -67,29 +62,8 @@ const CategoryManagement = () => {
     }
   };
 
-  const handleAddCategory = async (categoryName, image, description, subcategories) => {
-    try {
-      console.log('Starting category addition with:', { 
-        categoryName, 
-        description,
-        subcategories
-      });
-      
-      // Upload image first
-      console.log('Uploading image...');
-      const imageUrl = await uploadImage(image);
-      console.log('Image uploaded successfully:', imageUrl);
-
-      // Instead of making the API call, just log what would be sent
-      console.log('Would add category with:', {
-        categoryName,
-        categoryType: description || "Others",
-        categotyImage: imageUrl,
-        subcategories: subcategories
-      });
-
-      // Since there's no actual API call, we can skip the response validation
-      // but we should still refresh the categories list and close the modal
+  const handleAddCategory = async () => {
+    try {      
       await fetchCategories();
       setShowAddModal(false);
     } catch (error) {
@@ -101,46 +75,6 @@ const CategoryManagement = () => {
   const handleEdit = (category) => {
     setEditingCategory(category);
     setIsEditing(true);
-  };
-
-  const handleSaveEdit = async (categoryId, categoryName, image, categoryType, subcategories) => {
-    try {
-      let imageUrl = editingCategory.categotyImage;
-      
-      // Upload new image if provided
-      if (image && typeof image !== 'string') {
-        console.log('Uploading new image for edit...');
-        imageUrl = await uploadImage(image);
-      }
-
-      const response = await fetch(
-        `${API_BASE_URL}/categories/editcategory/${categoryId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            categoryName,
-            categoryType,
-            categotyImage: imageUrl,
-            subcategories,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update category");
-      }
-
-      await fetchCategories();
-      setIsEditing(false);
-      setEditingCategory(null);
-    } catch (error) {
-      console.error("Error updating category:", error);
-      alert(`Failed to update category: ${error.message}`);
-    }
   };
 
   const handleDelete = (category) => {
@@ -242,15 +176,7 @@ const CategoryManagement = () => {
             setIsEditing(false);
             setEditingCategory(null);
           }}
-          onAdd={(name, image, description, subcategories) => 
-            handleSaveEdit(
-              editingCategory._id,
-              name,
-              image,
-              description || "Others",
-              subcategories
-            )
-          }
+          onAdd={handleAddCategory}
           initialData={editingCategory}
           isEditing={true}
         />

@@ -522,7 +522,7 @@ const ProductForm = () => {
         {/* Two-column layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column - Product Info - with scrollable container */}
-          <div className="space-y-4 overflow-y-auto pr-4 pb-16" style={{ maxHeight: 'calc(100vh - 150px)' }}>
+          <div className="space-y-4 overflow-y-auto pr-4 pb-16">
             <div>
               <label className="block text-sm text-gray-700 mb-1">Product Name</label>
               <input

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from "../../../config/api";
+import axios from "axios";
 
 const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
   const [categoryName, setCategoryName] = useState("");
-  const [categoryType, setCategoryType] = useState("");
+  const [description, setdescription] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [subcategories, setSubcategories] = useState([]);
@@ -14,14 +16,14 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
   useEffect(() => {
     if (initialData && isEditing) {
       setCategoryName(initialData.categoryName || "");
-      setCategoryType(initialData.categoryType || "");
+      setdescription(initialData.categoryDescription || "");
       
       if (initialData.categoryImage) {
         setPreviewImage(initialData.categoryImage);
       }
       
-      if (initialData.subcategories) {
-        setSubcategories(initialData.subcategories);
+      if (initialData.subCategories) {
+        setSubcategories(initialData.subCategories);
       }
     }
   }, [initialData, isEditing]);
@@ -84,40 +86,42 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
     setError(null);
 
     try {
-      // Create FormData object for file upload
-      const formData = new FormData();
-      formData.append("categoryName", categoryName);
-      formData.append("categoryType", categoryType);
-      formData.append("subcategories", JSON.stringify(subcategories));
-      
-      // If there's a new image selected, append it
+
+      let imageUploadResponse = null;
       if (selectedImage) {
-        formData.append("categoryImage", selectedImage);
-      } else if (isEditing && previewImage && typeof previewImage === 'string') {
-        // If editing and using existing image, we may need to handle this differently
-        // depending on how your API expects updates to existing images
-        formData.append("existingImageUrl", previewImage);
-      }
+        const formData = new FormData();
+        formData.append("file", selectedImage);
 
-      // Add ID if editing
-      if (isEditing && initialData._id) {
-        formData.append("categoryId", initialData._id);
+        imageUploadResponse = await axios({
+          method: "post",
+          url: "/upload",
+          data: formData,
+          headers: {
+            Authorization: "QuindlTokPATFileUpload2025#$$TerOiu$",
+            "Content-Type": "multipart/form-data",
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        });
       }
-
-      // Determine the endpoint based on whether we're adding or editing
       const endpoint = isEditing 
-        ? `https://ecom-2-osny.onrender.com/updatecategory/${initialData._id}`
-        : "https://ecom-2-osny.onrender.com/addcategory";
+        ? `${API_BASE_URL}/categories/editcategory/${initialData._id}`
+        : `${API_BASE_URL}/categories/addcategory`;
       
-      // Determine the HTTP method
       const method = isEditing ? "PUT" : "POST";
-
-      // Make the API request
       const response = await fetch(endpoint, {
         method,
-        body: formData,
-        // Don't set Content-Type header when using FormData
-        // The browser will set it automatically with the correct boundary
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+          {
+            categoryName,
+            categoryDescription: description,
+            categoryImage: selectedImage ? imageUploadResponse.data.filePath : initialData.categoryImage,
+            subCategories: subcategories,
+          }
+        ),
       });
 
       if (!response.ok) {
@@ -125,12 +129,8 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
         throw new Error(errorData.message || "Failed to save category");
       }
 
-      const result = await response.json();
-      
-      // Call the onAdd callback with the result from the server
-      onAdd(result);
-      
-      // Close the modal
+      const result = await response.json();      
+      onAdd(result);      
       onClose();
     } catch (err) {
       setError(err.message || "An error occurred while saving the category");
@@ -155,7 +155,6 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
           </button>
         </div>
 
-        {/* Image Upload Area */}
         <div
           className="border-2 border-dashed border-gray-300 rounded-lg mb-4 p-4"
           onDrop={handleDrop}
@@ -205,8 +204,8 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
         <input
           type="text"
           placeholder="Description"
-          value={categoryType}
-          onChange={(e) => setCategoryType(e.target.value)}
+          value={description}
+          onChange={(e) => setdescription(e.target.value)}
           className="w-full px-3 py-2 border rounded-md mb-4"
         />
 
