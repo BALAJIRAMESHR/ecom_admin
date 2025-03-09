@@ -61,17 +61,6 @@ const CategoryList = ({ categories, onEdit, onDelete, onAdd }) => {
     </div>
   );
 
-  const renderCategoryImage = (imageUrl) => {
-    return (
-      <img
-        src={getImageUrl(imageUrl)}
-        alt="Category"
-        className="w-full h-full object-cover"
-        onError={handleImageError}
-      />
-    );
-  };
-
   const renderSubcategories = (subcategories) => {
     if (!subcategories || !subcategories.length) return "-";
     return subcategories.join(", ");
@@ -117,13 +106,13 @@ const CategoryList = ({ categories, onEdit, onDelete, onAdd }) => {
               <span className="text-sm font-medium">{category.categoryName}</span>
             </div>
             <div className="col-span-7 flex items-center">
-              <span className="text-sm">{renderSubcategories(category.subcategories)}</span>
+              <span className="text-sm">{renderSubcategories(category.subCategories)}</span>
             </div>
             <div className="col-span-2 flex items-center justify-end">
               <ActionMenu category={category} />
             </div>
           </div>
-        ))}
+        ))} 
 
         {categories.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
