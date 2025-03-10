@@ -1,423 +1,642 @@
 import React, { useState, useEffect } from 'react';
-import { Edit } from 'lucide-react';
-import axios from 'axios';
 import { API_BASE_URL } from '../../../config/api';
-
-const INITIAL_PERMISSIONS = {
-  productManagement: false,
-  orderManagement: false,
-  categoryManagement: false,
-  couponsManagement: false,
-  inventoryManagement: false,
-  marketingManagement: false,
-  userManagement: false
-};
-
-const INITIAL_USER_STATE = {
-  username: '',
-  email: '',
-  password: '',
-  phoneNumber: '',
-  address: '',
-  permissions: INITIAL_PERMISSIONS
-};
-
 const UserManagement = () => {
+  // Sample data for demonstration
+  const sampleUsers = [
+    {
+      id: 1,
+      name: "Manikandan G",
+      email: "manimani@2gmail.com",
+      phone: "63687 54210",
+      address: "08, Raji st, CBE",
+      isActive: true,
+      permissions: {
+        productManagement: false,
+        categoryManagement: true,
+        order: false,
+        customerManagement: true,
+        coupons: true,
+        inventory: true,
+        analytics: true,
+        marketing: true,
+        userManagement: false
+      }
+    },
+    {
+      id: 2,
+      name: "Sharmila T",
+      email: "Sharmila0@2gmail.com",
+      phone: "63687 54210",
+      address: "08, Raji st, CBE",
+      isActive: true,
+      permissions: {
+        productManagement: false,
+        categoryManagement: true,
+        order: true,
+        customerManagement: true,
+        coupons: true,
+        inventory: true,
+        analytics: true,
+        marketing: true,
+        userManagement: false
+      }
+    },
+    {
+      id: 3,
+      name: "Boobesh G",
+      email: "boobesh@example.com",
+      phone: "63687 54210",
+      address: "08, Raji st, CBE",
+      isActive: false,
+      permissions: {
+        productManagement: false,
+        categoryManagement: false,
+        order: false,
+        customerManagement: false,
+        coupons: false,
+        inventory: false,
+        analytics: true,
+        marketing: false,
+        userManagement: false
+      }
+    }
+  ];
+
   const [users, setUsers] = useState([]);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [newUser, setNewUser] = useState(INITIAL_USER_STATE);
-  const [editUser, setEditUser] = useState({ ...INITIAL_USER_STATE, password: undefined });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
+  const [currentUser, setCurrentUser] = useState({
+    id: null,
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    address: '',
+    isActive: true,
+    permissions: {
+      productManagement: false,
+      categoryManagement: false,
+      order: false,
+      customerManagement: false,
+      coupons: false,
+      inventory: false,
+      analytics: false,
+      marketing: false,
+      userManagement: false
+    }
+  });
+
+  // Fetch users on component mount
+  useEffect(() => {
+    // For demonstration, we'll use the sample data
+    setUsers(sampleUsers);
+    setLoading(false);
+  }, []);
 
   const fetchUsers = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/admin/getallusers`);
-      setUsers(response.data);
-    } catch (error) {
-      console.error('Error fetching users:', error);
-      // You might want to show an error toast or message here
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const handleCreateUser = async (e) => {
-    e.preventDefault(); // Always prevent the default form submission
-    
-    try {
-      const userData = {
-        username: newUser.username,
-        email: newUser.email,
-        password: newUser.password,
-        phoneNumber: newUser.phoneNumber,
-        address: newUser.address,
-        permissions: newUser.permissions
-      };
-
-      const response = await axios.post(`${API_BASE_URL}/api/admin/add`, userData);
-
-      if (response.data.message === 'Admin user created successfully') {
-        fetchUsers();
-        setIsCreateModalOpen(false);
-        setNewUser(INITIAL_USER_STATE);
-        // Add success notification here if needed
-      }
-    } catch (error) {
-      console.error('Error creating user:', error.response?.data?.message || error.message);
-      // Add error notification here if needed
-    }
-  };
-
-  const handleEdit = (user) => {
-    setEditingId(user._id);
-    setEditUser({
-      username: user.username,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      address: user.address,
-      permissions: { ...user.permissions },
-      isActive: user.isActive
-    });
-  };
-
-  const handleSaveEdit = async (id, e) => {
-    e.preventDefault(); // Always prevent the default form submission
-    
-    try {
-      const response = await axios.put(`${API_BASE_URL}/api/admin/edit/${id}`, {
-        username: editUser.username,
-        address: editUser.address,
-        permissions: editUser.permissions,
-        isActive: editUser.isActive
-      });
-
-      if (response.data.message === 'Admin user updated successfully') {
-        fetchUsers();
-        setEditingId(null);
-        // Add success notification here if needed
-      }
-    } catch (error) {
-      console.error('Error updating user:', error.response?.data?.message || error.message);
-      // Add error notification here if needed
+      // In a real app, this would be an API call
+      setUsers(sampleUsers);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setError('Failed to load users. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditUser((prev) => ({
-      ...prev,
+    setCurrentUser({
+      ...currentUser,
       [name]: value
-    }));
-  };
-
-  const handleNewUserChange = (e) => {
-    const { name, value } = e.target;
-    setNewUser(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    });
   };
 
   const handlePermissionChange = (permission) => {
-    setEditUser(prev => ({
-      ...prev,
+    setCurrentUser({
+      ...currentUser,
       permissions: {
-        ...prev.permissions,
-        [permission]: !prev.permissions[permission]
+        ...currentUser.permissions,
+        [permission]: !currentUser.permissions[permission]
       }
-    }));
+    });
   };
 
-  const handleNewUserPermissionChange = (permission) => {
-    setNewUser(prev => ({
-      ...prev,
+  const openAddModal = () => {
+    setCurrentUser({
+      id: null,
+      name: '',
+      email: '',
+      password: '',
+      phone: '',
+      address: '',
+      isActive: true,
       permissions: {
-        ...prev.permissions,
-        [permission]: !prev.permissions[permission]
+        productManagement: false,
+        categoryManagement: false,
+        order: false,
+        customerManagement: false,
+        coupons: false,
+        inventory: false,
+        analytics: false,
+        marketing: false,
+        userManagement: false
       }
-    }));
+    });
+    setModalMode('add');
+    setShowModal(true);
   };
 
-  const PermissionCheckbox = ({ name, label, checked, onChange, disabled = false }) => (
-    <div className="flex items-center gap-3">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={onChange}
-        disabled={disabled}
-        className="w-4 h-4 rounded border-gray-300"
-      />
-      <span className="text-base">{label}</span>
-    </div>
-  );
-
-  const UserInfoField = ({ icon, value }) => (
-    <div className="flex items-center gap-4">
-      <span className="text-xl text-gray-500">{icon}</span>
-      <span className="text-base">{value}</span>
-    </div>
-  );
-
-  const UserCard = ({ user }) => {
-    const isEditing = editingId === user._id;
-    const currentUser = isEditing ? editUser : user;
-
-    const renderInput = (field, icon) => (
-      <div key={field} className="flex items-center gap-3">
-        <span className="text-xl">{icon}</span>
-        <input
-          type={field === 'email' ? 'email' : 'text'}
-          name={field}
-          value={currentUser[field] || ''}
-          onChange={handleInputChange}
-          className="flex-1 border-2 border-blue-200 rounded-lg p-2 text-base focus:outline-none focus:border-purple-400"
-        />
-      </div>
-    );
-
-    return (
-      <div className="bg-white rounded-lg border border-blue-200 p-8 w-full">
-        <div className="border-b border-dotted border-gray-200 pb-6">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <div className={`w-5 h-5 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-base font-medium">
-                {user.isActive ? 'User Active' : 'User Inactive'}
-              </span>
-            </div>
-            <button 
-              onClick={() => handleEdit(user)}
-              className="p-3 rounded-full bg-purple-100 hover:bg-purple-200"
-              type="button"
-            >
-              <Edit className="w-5 h-5 text-purple-600" />
-            </button>
-          </div>
-
-          {isEditing ? (
-            <form onSubmit={(e) => handleSaveEdit(user._id, e)} className="space-y-4 mt-6">
-              <div className="space-y-4">
-                {renderInput('username', '👤')}
-                {renderInput('phoneNumber', '📞')}
-                {renderInput('email', '✉️')}
-                {renderInput('address', '📍')}
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-4 mt-6">
-              <UserInfoField icon="👤" value={user.username} />
-              <UserInfoField icon="📞" value={user.phoneNumber} />
-              <UserInfoField icon="✉️" value={user.email} />
-              {user.address && <UserInfoField icon="📍" value={user.address} />}
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-6 pt-6">
-          {Object.entries(INITIAL_PERMISSIONS).map(([key, _]) => (
-            <PermissionCheckbox
-              key={key}
-              name={key}
-              label={key.replace('Management', ' Management')}
-              checked={currentUser.permissions[key]}
-              onChange={() => isEditing && handlePermissionChange(key)}
-              disabled={!isEditing}
-            />
-          ))}
-        </div>
-
-        {isEditing && (
-          <div className="flex justify-end gap-3 mt-6">
-            <button
-              type="button"
-              onClick={() => setEditingId(null)}
-              className="px-6 py-2 border-2 border-red-200 text-red-600 rounded-lg hover:bg-red-50 text-base"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              onClick={(e) => handleSaveEdit(user._id, e)}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-base"
-            >
-              Save
-            </button>
-          </div>
-        )}
-      </div>
-    );
+  const openEditModal = (user) => {
+    setCurrentUser({
+      ...user,
+      password: '' // Don't include current password for security
+    });
+    setModalMode('edit');
+    setShowModal(true);
   };
 
-const CreateUserModal = () => {
-  const handleSubmitForm = (e) => {
-    e.preventDefault();
-    handleCreateUser(e);
+  const handleSubmit = async () => {
+    try {
+      if (modalMode === 'add') {
+        // In a real app, this would be an API call
+        // await axios.post(`${API_BASE_URL}/admin/users`, currentUser);
+        
+        const newUser = {
+          ...currentUser,
+          id: users.length + 1 // Simple ID generation for demo
+        };
+        setUsers([...users, newUser]);
+      } else if (modalMode === 'edit') {
+        // In a real app, this would be an API call
+        // await axios.put(`${API_BASE_URL}/admin/users/${currentUser.id}`, currentUser);
+        
+        // For demo, we'll update the local state
+        const updatedUsers = users.map(user => 
+          user.id === currentUser.id ? currentUser : user
+        );
+        setUsers(updatedUsers);
+      }
+      console.log('User saved:', currentUser);
+      
+      setShowModal(false);
+    } catch (err) {
+      console.error('Error saving user:', err);
+      alert('Failed to save user. Please try again.');
+    }
+  };
+
+  const toggleUserStatus = async (userId, currentStatus) => {
+    try {
+      // In a real app, this would be an API call
+      // await axios.patch(`${API_BASE_URL}/admin/users/${userId}/status`, {
+      //   isActive: !currentStatus
+      // });
+      
+      // For demo, we'll update the local state
+      const updatedUsers = users.map(user => 
+        user.id === userId ? {...user, isActive: !currentStatus} : user
+      );
+      setUsers(updatedUsers);
+    } catch (err) {
+      console.error('Error toggling user status:', err);
+      alert('Failed to update user status.');
+    }
   };
 
   return (
-    <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isCreateModalOpen ? '' : 'hidden'}`}>
-      <div className="bg-white rounded-lg p-8 w-full max-w-4xl mx-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-medium">Create New User</h2>
-          <button 
-            type="button"
-            onClick={() => {
-              setIsCreateModalOpen(false);
-              setNewUser(INITIAL_USER_STATE);
-            }} 
-            className="text-gray-500 text-2xl hover:text-gray-700"
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmitForm}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div>
-                <div className="text-base mb-2">Username</div>
-                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                  <span className="text-xl">👤</span>
-                  <input
-                    type="text"
-                    name="username"
-                    value={newUser.username}
-                    onChange={handleNewUserChange}
-                    className="flex-1 outline-none text-base"
-                    placeholder="Username"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="text-base mb-2">Email</div>
-                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                  <span className="text-xl">✉️</span>
-                  <input 
-                    type="email" 
-                    name="email"
-                    value={newUser.email}
-                    onChange={handleNewUserChange}
-                    className="flex-1 outline-none text-base"
-                    placeholder="Email"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="text-base mb-2">Password</div>
-                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                  <span className="text-xl">🔒</span>
-                  <input
-                    type="password"
-                    name="password"
-                    value={newUser.password}
-                    onChange={handleNewUserChange}
-                    className="flex-1 outline-none text-base"
-                    placeholder="Password"
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="text-base mb-2">Phone Number</div>
-                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                  <span className="text-xl">📞</span>
-                  <input
-                    type="text"
-                    name="phoneNumber"
-                    value={newUser.phoneNumber}
-                    onChange={handleNewUserChange}
-                    className="flex-1 outline-none text-base"
-                    placeholder="Phone Number"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="text-base mb-2">Address</div>
-                <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
-                  <span className="text-xl">📍</span>
-                  <input
-                    type="text"
-                    name="address"
-                    value={newUser.address}
-                    onChange={handleNewUserChange}
-                    className="flex-1 outline-none text-base"
-                    placeholder="Address"
-                    autoComplete="off"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {Object.keys(INITIAL_PERMISSIONS).map(permission => (
-                <div key={permission} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id={`perm-${permission}`}
-                    checked={newUser.permissions[permission]}
-                    onChange={() => handleNewUserPermissionChange(permission)}
-                    className="rounded border-gray-300"
-                  />
-                  <label htmlFor={`perm-${permission}`} className="text-sm">
-                    {permission.replace('Management', ' Management')}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-2 mt-6">
-            <button
-              type="button"
-              onClick={() => {
-                setIsCreateModalOpen(false);
-                setNewUser(INITIAL_USER_STATE);
-              }}
-              className="px-4 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-            >
-              Create User
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-  return (
-    <div className="p-6">
+    <div className="p-4 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">User Management</h1>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-          type="button"
+        <h1 className="text-2xl font-bold">User Management <span className="text-sm ml-2 text-gray-500">{users.length} user's</span></h1>
+        <button 
+          onClick={openAddModal}
+          className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition duration-200"
         >
-          Create User
+          Add New User
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {users.map(user => (
-          <UserCard key={user._id} user={user} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="text-center py-10">
+          <div className="animate-spin h-10 w-10 mx-auto text-purple-500">Loading...</div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-10 text-red-500">
+          <p>{error}</p>
+          <button 
+            onClick={fetchUsers}
+            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : (
+        <div className="">
+          {users.map((user) => (
+            <div key={user.id} className="border-b  p-8  last:border-b-0 relative">
+              <div className="p-4 bg-white  border border-blue-500">
+                <button 
+                  className="absolute top-4 right-4 p-2 bg-purple-100 rounded-full"
+                  onClick={() => openEditModal(user)}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                </button>
+                
+                <div className="flex items-center mb-4 ">
+                  <div 
+                    className={`w-3 h-3 rounded-full mr-2 ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`}
+                  ></div>
+                  <span className="text-sm">{user.isActive ? 'User Active' : 'User Inactive'}</span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                  <div className="md:col-span-4 space-y-4">
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      <span>{user.name}</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                      </svg>
+                      <span>{user.phone || 'N/A'}</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                      </svg>
+                      <span>{user.email || 'N/A'}</span>
+                    </div>
+                    
+                    {user.address && (
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                        <span>{user.address}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="md:col-span-8 grid grid-cols-2 gap-y-2">
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.productManagement} 
+                        readOnly
+                      />
+                      <span className="ml-2">Product Management</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.coupons} 
+                        readOnly
+                      />
+                      <span className="ml-2">Coupons</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.categoryManagement} 
+                        readOnly
+                      />
+                      <span className="ml-2">Category Management</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.inventory} 
+                        readOnly
+                      />
+                      <span className="ml-2">Inventory</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.order} 
+                        readOnly
+                      />
+                      <span className="ml-2">Order</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.analytics} 
+                        readOnly
+                      />
+                      <span className="ml-2">Design Lab</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.customerManagement} 
+                        readOnly
+                      />
+                      <span className="ml-2">Customer Management</span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.marketing} 
+                        readOnly
+                      />
+                      <span className="ml-2">Marketing</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <CreateUserModal />
+      {/* Add/Edit User Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">
+                  {modalMode === 'add' ? 'Create New User' : 'Edit User'}
+                </h2>
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Username</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        name="name"
+                        value={currentUser.name}
+                        onChange={handleInputChange}
+                        className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Username"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Email</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="email"
+                        name="email"
+                        value={currentUser.email}
+                        onChange={handleInputChange}
+                        className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Email"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">
+                      {modalMode === 'add' ? 'Password' : 'New Password (leave blank to keep current)'}
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input
+                        type="password"
+                        name="password"
+                        value={currentUser.password}
+                        onChange={handleInputChange}
+                        className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
+                        placeholder={modalMode === 'add' ? 'Password' : 'New Password'}
+                        required={modalMode === 'add'}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Phone Number</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        name="phone"
+                        value={currentUser.phone}
+                        onChange={handleInputChange}
+                        className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Phone Number"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium mb-1">Address</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        name="address"
+                        value={currentUser.address}
+                        onChange={handleInputChange}
+                        className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
+                        placeholder="Address"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={currentUser.isActive}
+                        onChange={() => setCurrentUser({...currentUser, isActive: !currentUser.isActive})}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <span className="ml-2">User Active</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium mb-3">Permissions</h3>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="productManagement"
+                        checked={currentUser.permissions.productManagement}
+                        onChange={() => handlePermissionChange('productManagement')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="productManagement" className="ml-2">Product Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="orderManagement"
+                        checked={currentUser.permissions.order}
+                        onChange={() => handlePermissionChange('order')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="orderManagement" className="ml-2">Order Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="categoryManagement"
+                        checked={currentUser.permissions.categoryManagement}
+                        onChange={() => handlePermissionChange('categoryManagement')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="categoryManagement" className="ml-2">Category Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="customerManagement"
+                        checked={currentUser.permissions.customerManagement}
+                        onChange={() => handlePermissionChange('customerManagement')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="customerManagement" className="ml-2">Customer Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="couponsManagement"
+                        checked={currentUser.permissions.coupons}
+                        onChange={() => handlePermissionChange('coupons')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="couponsManagement" className="ml-2">Coupons Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="inventoryManagement"
+                        checked={currentUser.permissions.inventory}
+                        onChange={() => handlePermissionChange('inventory')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="inventoryManagement" className="ml-2">Inventory Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="analyticsManagement"
+                        checked={currentUser.permissions.analytics}
+                        onChange={() => handlePermissionChange('analytics')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="analyticsManagement" className="ml-2">Design Lab</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="marketingManagement"
+                        checked={currentUser.permissions.marketing}
+                        onChange={() => handlePermissionChange('marketing')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="marketingManagement" className="ml-2">Marketing Management</label>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="userManagement"
+                        checked={currentUser.permissions.userManagement}
+                        onChange={() => handlePermissionChange('userManagement')}
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                      />
+                      <label htmlFor="userManagement" className="ml-2">User Management</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                
+                <button
+                  onClick={handleSubmit}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                >
+                  {modalMode === 'add' ? 'Create User' : 'Save Changes'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
