@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { CirclePlus, MoreVertical, X } from "lucide-react";
 import { API_BASE_URL } from "../../../config/api";
+import EditModal from "./EditModal";
 
 const EditProductModal = ({ product, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -86,8 +87,10 @@ const EditProductModal = ({ product, onClose, onSave }) => {
             <div className="space-y-6">
               {/* Basic Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
-                
+                <h3 className="text-lg font-medium text-gray-900">
+                  Basic Information
+                </h3>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Product Name
@@ -169,7 +172,7 @@ const EditProductModal = ({ product, onClose, onSave }) => {
               {/* Pricing */}
               <div className="space-y-4">
                 <h3 className="text-lg font-medium text-gray-900">Pricing</h3>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Cost Price
@@ -223,8 +226,10 @@ const EditProductModal = ({ product, onClose, onSave }) => {
             <div className="space-y-6">
               {/* Stock & Availability */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Stock & Availability</h3>
-                
+                <h3 className="text-lg font-medium text-gray-900">
+                  Stock & Availability
+                </h3>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Stock
@@ -256,8 +261,10 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 
               {/* Additional Details */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">Additional Details</h3>
-                
+                <h3 className="text-lg font-medium text-gray-900">
+                  Additional Details
+                </h3>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Tax (%)
@@ -342,12 +349,25 @@ const DeleteConfirmationModal = ({ onClose, onConfirm }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md text-center">
         <div className="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-10 w-10 text-red-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
           </svg>
         </div>
         <h2 className="text-xl font-semibold mb-2">Delete Product</h2>
-        <p className="text-gray-600 mb-6">Do you want to delete this product? This action cannot be undone.</p>
+        <p className="text-gray-600 mb-6">
+          Do you want to delete this product? This action cannot be undone.
+        </p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onClose}
@@ -373,7 +393,9 @@ const ViewProductDetails = ({ product, onClose }) => {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white px-6 py-4 border-b flex justify-between items-center">
-          <h2 className="text-2xl font-semibold text-gray-800">Product Details</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Product Details
+          </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -386,7 +408,9 @@ const ViewProductDetails = ({ product, onClose }) => {
         <div className="p-6">
           {/* Product Images */}
           <div className="mb-8">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Product Images</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Product Images
+            </h3>
             <div className="grid grid-cols-3 gap-4">
               {product.images && product.images.length > 0 ? (
                 product.images.map((image, index) => (
@@ -409,44 +433,72 @@ const ViewProductDetails = ({ product, onClose }) => {
             {/* Basic Information */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Information</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Basic Information
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Product Name</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Product Name
+                    </label>
                     <p className="mt-1 text-gray-900">{product.productName}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Product Code</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Product Code
+                    </label>
                     <p className="mt-1 text-gray-900">{product.productCode}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Category</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Category
+                    </label>
                     <p className="mt-1 text-gray-900">{product.categoryName}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Variant</label>
-                    <p className="mt-1 text-gray-900">{product.variantName || 'N/A'}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Variant
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      {product.variantName || "N/A"}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Description</label>
-                    <p className="mt-1 text-gray-900">{product.description || 'No description available'}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Description
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      {product.description || "No description available"}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Pricing Details</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Pricing Details
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Cost Price</label>
-                    <p className="mt-1 text-gray-900">₹{product.actualPrice || product.costPrice}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Cost Price
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      ₹{product.actualPrice || product.costPrice}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Selling Price</label>
-                    <p className="mt-1 text-gray-900">₹{product.sellingPrice}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Selling Price
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      ₹{product.sellingPrice}
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Tax</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Tax
+                    </label>
                     <p className="mt-1 text-gray-900">{product.tax}%</p>
                   </div>
                 </div>
@@ -456,21 +508,29 @@ const ViewProductDetails = ({ product, onClose }) => {
             {/* Additional Information */}
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Stock Information</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Stock Information
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Stock Quantity</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Stock Quantity
+                    </label>
                     <p className="mt-1 text-gray-900">{product.stock} units</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Availability</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Availability
+                    </label>
                     <p className="mt-1">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.availability
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.availability ? 'In Stock' : 'Out of Stock'}
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          product.availability
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {product.availability ? "In Stock" : "Out of Stock"}
                       </span>
                     </p>
                   </div>
@@ -478,28 +538,46 @@ const ViewProductDetails = ({ product, onClose }) => {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Product Specifications</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Product Specifications
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Saree Size</label>
-                    <p className="mt-1 text-gray-900">{product.sareeSize} meters</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Saree Size
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      {product.sareeSize} meters
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Blouse Size</label>
-                    <p className="mt-1 text-gray-900">{product.blouseSize} meters</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Blouse Size
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      {product.blouseSize} meters
+                    </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Color</label>
-                    <p className="mt-1 text-gray-900">{product.color || 'N/A'}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Color
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      {product.color || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Additional Details</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                  Additional Details
+                </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Tags</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Tags
+                    </label>
                     <div className="mt-1 flex flex-wrap gap-2">
                       {product.tags && product.tags.length > 0 ? (
                         product.tags.map((tag, index) => (
@@ -516,8 +594,12 @@ const ViewProductDetails = ({ product, onClose }) => {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Material & Care</label>
-                    <p className="mt-1 text-gray-900">{product.materialAndCare || 'N/A'}</p>
+                    <label className="text-sm font-medium text-gray-500">
+                      Material & Care
+                    </label>
+                    <p className="mt-1 text-gray-900">
+                      {product.materialAndCare || "N/A"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -550,7 +632,7 @@ const ProductTable = ({ setAddForm }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/products/getallproducts`);
       if (!response.ok) {
-        throw new Error('Failed to fetch products');
+        throw new Error("Failed to fetch products");
       }
       const data = await response.json();
       setProducts(data);
@@ -579,7 +661,10 @@ const ProductTable = ({ setAddForm }) => {
 
     if (categoryId) {
       const filtered = products.filter((product) => {
-        return product.categoryId?._id === categoryId || product.categoryId === categoryId;
+        return (
+          product.categoryId?._id === categoryId ||
+          product.categoryId === categoryId
+        );
       });
       setFilteredProducts(filtered);
     } else {
@@ -604,37 +689,17 @@ const ProductTable = ({ setAddForm }) => {
   const confirmDelete = async () => {
     try {
       await fetch(`${API_BASE_URL}/products/${productToDelete}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
-      
-      const updatedProducts = products.filter((product) => product._id !== productToDelete);
+
+      const updatedProducts = products.filter(
+        (product) => product._id !== productToDelete
+      );
       setProducts(updatedProducts);
       setFilteredProducts(updatedProducts);
       setProductToDelete(null);
     } catch (error) {
       console.error("Failed to delete product:", error);
-    }
-  };
-
-  const handleUpdate = async (updatedProduct) => {
-    try {
-      // Update the products list with the new data
-      setProducts(prevProducts => 
-        prevProducts.map(product => 
-          product._id === updatedProduct._id ? updatedProduct : product
-        )
-      );
-      
-      // Update filtered products too
-      setFilteredProducts(prevFiltered => 
-        prevFiltered.map(product => 
-          product._id === updatedProduct._id ? updatedProduct : product
-        )
-      );
-      
-      setSelectedProduct(null); // Close the edit modal
-    } catch (error) {
-      console.error("Error updating product:", error);
     }
   };
 
@@ -648,7 +713,38 @@ const ProductTable = ({ setAddForm }) => {
   }
 
   if (error) {
-    return <div className="w-full text-center py-4 text-red-500">Error: {error}</div>;
+    return (
+      <div className="w-full text-center py-4 text-red-500">Error: {error}</div>
+    );
+  }
+
+  const handleUpdate = async (updatedProduct) => {
+    try {
+      // Update the products list with the new data
+      setProducts((prevProducts) =>
+        prevProducts.map((product) =>
+          product._id === updatedProduct._id ? updatedProduct : product
+        )
+      );
+
+      // Optionally refresh the product list from the server
+      await fetchProducts();
+
+      setSelectedProduct(null); // Close the edit modal
+    } catch (error) {
+      console.error("Error updating product:", error);
+      alert(error.message || "Failed to update product");
+    }
+  };
+
+  if (selectedProduct) {
+    return (
+      <EditModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onSave={handleUpdate}
+      />
+    );
   }
 
   return (
@@ -666,10 +762,7 @@ const ProductTable = ({ setAddForm }) => {
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
-                  <option 
-                    key={category._id} 
-                    value={category._id}
-                  >
+                  <option key={category._id} value={category._id}>
                     {category.categoryName}
                   </option>
                 ))}
@@ -696,9 +789,7 @@ const ProductTable = ({ setAddForm }) => {
               <th className="px-6 py-4 text-gray-600 font-medium">
                 Product Name
               </th>
-              <th className="px-6 py-4 text-gray-600 font-medium">
-                Category
-              </th>
+              <th className="px-6 py-4 text-gray-600 font-medium">Category</th>
               <th className="px-6 py-4 text-gray-600 font-medium">
                 Cost Price
               </th>
@@ -712,7 +803,10 @@ const ProductTable = ({ setAddForm }) => {
           </thead>
           <tbody>
             {filteredProducts.map((product, index) => (
-              <tr key={product._id || index} className="border-b hover:bg-gray-50">
+              <tr
+                key={product._id || index}
+                className="border-b hover:bg-gray-50"
+              >
                 <td className="px-6 py-4 text-gray-500">{index + 1}</td>
                 <td className="px-6 py-4 text-gray-500">
                   {product.productName}
@@ -751,7 +845,7 @@ const ProductTable = ({ setAddForm }) => {
                         >
                           Delete
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleViewDetails(product)}
                           className="w-full text-left px-4 py-2 hover:bg-gray-100"
                         >

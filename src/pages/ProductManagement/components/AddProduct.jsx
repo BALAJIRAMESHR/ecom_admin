@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Image, X, Upload, Plus, Camera } from 'lucide-react';
 // Import API config
 import { API_BASE_URL } from '../../../config/api';
+import axios, { all } from 'axios';
 
 // Modal Component for adding new variants and customization types
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -388,6 +389,7 @@ const ProductForm = () => {
   // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
+    fetchVariants();
   }, []);
 
   // Function to fetch categories from API
@@ -429,6 +431,14 @@ const fetchCategories = async () => {
   } finally {
     setIsLoadingCategories(false);
   }
+};
+
+const fetchVariants = async () => {
+  const getVariants = axios.get(`${API_BASE_URL}/variants/getallvariants`)
+  .then((response) => {
+    console.log(response);
+    setVariants(response.data);
+  })
 };
 
   // Handle back button click
@@ -489,11 +499,17 @@ const fetchCategories = async () => {
   // Add variant handler
   const handleAddVariant = () => {
     if (newVariant.trim()) {
-      const updatedVariants = [...variants, newVariant.trim()];
-      setVariants(updatedVariants);
-      setNewVariant('');
-      setShowVariantModal(false);
-      console.log('Updated variants:', updatedVariants);
+      axios.post(`${API_BASE_URL}/variants/addvariant`, {
+        variantName: newVariant
+      })
+      .then((response) => {
+        console.log(response);
+        const updatedVariants = [...variants, response.data];
+        setVariants(updatedVariants);
+        setNewVariant('');
+        setShowVariantModal(false);
+        console.log('Updated variants:', updatedVariants);
+      })
     }
   };
 
@@ -513,7 +529,7 @@ const fetchCategories = async () => {
   };
 
   // Log all form data
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     const allData = {
       formData,
       tags,
@@ -526,7 +542,68 @@ const fetchCategories = async () => {
     };
     
     console.log('Complete form data:', allData);
+    addProduct(allData)
     alert('Product updated successfully!');
+  };
+
+
+  const addProduct = async (allData) => {
+    console.log(Object.keys(selectedSizes))
+    const productData = {
+      productName: allData.formData.productName,
+      productCode: allData.formData.productId,
+      categoryId: allData.formData.category,
+      categoryName: allData.formData.categoryName || "Sample",
+      variantName: allData.formData.variant,
+      variantId: allData.formData.variantId,
+      description: allData.formData.description,
+      standardSize: Object.keys(selectedSizes),
+      customization: allData.customizationEnabled,
+      stock: allData.formData.displayStock,
+      actualPrice: allData.formData.actualPrice,
+      sellingPrice: allData.formData.sellingPrice,
+      tags: allData.tags,
+      tax: allData.formData.tax,
+      couponCode: allData.formData.couponCode,
+      color: allData.formData.color,
+      availability: true,
+      images: mainImages,
+      isDesignLab: false,
+      customizationData: {
+        selectSize: {
+          shoulder: ["15"],
+          chest: ["40"],
+          bust: ["38"],
+          underBust: ["36"],
+          waist: ["32"],
+          hip: ["42"],
+          underArm: ["18"]
+        },
+        customizationType: [
+          {
+            typeName: "Type1",
+            standardImage: "standard1.jpg",
+            productImage: "product1.jpg"
+          },
+          {
+            typeName: "Type2",
+            standardImage: "standard2.jpg",
+            productImage: "product2.jpg"
+          }
+        ]
+      }
+    };
+  
+    console.log('Product data:', productData);
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/products/addproduct`, productData);
+      console.log('Product added successfully:', response.data);
+      alert('Product added successfully!');
+    } catch (error) {
+      console.error('Error adding product:', error.response?.data?.message || error.message);
+      alert('Failed to add product. Please try again.');
+    }
   };
 
   return (
@@ -630,7 +707,7 @@ const fetchCategories = async () => {
                 >
                   <option value="">-Select Variant-</option>
                   {variants.map(variant => (
-                    <option key={variant} value={variant}>{variant}</option>
+                    <option key={variant._id} value={variant.variantName}>{variant.variantName}</option>
                   ))}
                 </select>
                 <button 
