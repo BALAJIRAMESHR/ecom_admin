@@ -1,66 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../../config/api';
+import axios from 'axios';
 const UserManagement = () => {
-  // Sample data for demonstration
-  const sampleUsers = [
-    {
-      id: 1,
-      name: "Manikandan G",
-      email: "manimani@2gmail.com",
-      phone: "63687 54210",
-      address: "08, Raji st, CBE",
-      isActive: true,
-      permissions: {
-        productManagement: false,
-        categoryManagement: true,
-        order: false,
-        customerManagement: true,
-        coupons: true,
-        inventory: true,
-        analytics: true,
-        marketing: true,
-        userManagement: false
-      }
-    },
-    {
-      id: 2,
-      name: "Sharmila T",
-      email: "Sharmila0@2gmail.com",
-      phone: "63687 54210",
-      address: "08, Raji st, CBE",
-      isActive: true,
-      permissions: {
-        productManagement: false,
-        categoryManagement: true,
-        order: true,
-        customerManagement: true,
-        coupons: true,
-        inventory: true,
-        analytics: true,
-        marketing: true,
-        userManagement: false
-      }
-    },
-    {
-      id: 3,
-      name: "Boobesh G",
-      email: "boobesh@example.com",
-      phone: "63687 54210",
-      address: "08, Raji st, CBE",
-      isActive: false,
-      permissions: {
-        productManagement: false,
-        categoryManagement: false,
-        order: false,
-        customerManagement: false,
-        coupons: false,
-        inventory: false,
-        analytics: true,
-        marketing: false,
-        userManagement: false
-      }
-    }
-  ];
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,37 +10,36 @@ const UserManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('add'); // 'add' or 'edit'
   const [currentUser, setCurrentUser] = useState({
-    id: null,
-    name: '',
+    _id: null,
+    username: '',
     email: '',
     password: '',
-    phone: '',
+    phoneNumber: '',
     address: '',
     isActive: true,
     permissions: {
       productManagement: false,
       categoryManagement: false,
-      order: false,
+      orderManagement: false,
       customerManagement: false,
-      coupons: false,
-      inventory: false,
-      analytics: false,
-      marketing: false,
+      couponsManagement: false,
+      inventoryManagement: false,
+      analyticsManagement: false,
+      marketingManagement: false,
       userManagement: false
     }
   });
 
-  // Fetch users on component mount
   useEffect(() => {
-    // For demonstration, we'll use the sample data
-    setUsers(sampleUsers);
+    fetchUsers();
     setLoading(false);
   }, []);
 
   const fetchUsers = async () => {
     try {
-      // In a real app, this would be an API call
-      setUsers(sampleUsers);
+      const usersRes = await axios.get(`${API_BASE_URL}/api/admin/getallusers`);
+      console.log('User fetched:', usersRes);
+      setUsers(usersRes.data);
       setError(null);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -107,14 +47,6 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentUser({
-      ...currentUser,
-      [name]: value
-    });
   };
 
   const handlePermissionChange = (permission) => {
@@ -139,12 +71,12 @@ const UserManagement = () => {
       permissions: {
         productManagement: false,
         categoryManagement: false,
-        order: false,
+        orderManagement: false,
         customerManagement: false,
-        coupons: false,
-        inventory: false,
-        analytics: false,
-        marketing: false,
+        couponsManagement: false,
+        inventoryManagement: false,
+        analyticsManagement: false,
+        marketingManagement: false,
         userManagement: false
       }
     });
@@ -162,22 +94,36 @@ const UserManagement = () => {
   };
 
   const handleSubmit = async () => {
+    console.log('Saving user:', currentUser);
     try {
       if (modalMode === 'add') {
-        // In a real app, this would be an API call
-        // await axios.post(`${API_BASE_URL}/admin/users`, currentUser);
+        const response = await axios.post(`${API_BASE_URL}/api/admin/add`, 
+          {
+            username: currentUser.name,
+            email: currentUser.email,
+            password: currentUser.password,
+            phoneNumber: currentUser.phone,
+            address: currentUser.address,
+            isActive: currentUser.isActive,
+            permissions: {
+                productManagement: currentUser.permissions.productManagement,
+                categoryManagement: currentUser.permissions.categoryManagement,
+                orderManagement: currentUser.permissions.order,
+                customerManagement: currentUser.permissions.customerManagement,
+                couponsManagement: currentUser.permissions.coupons,
+                inventoryManagement: currentUser.permissions.inventory,
+                analyticsManagement: currentUser.permissions.analytics,
+                marketing: currentUser.permissions.marketing,
+                designLab: currentUser.permissions.userManagement
+            }
+        }
+        );
         
-        const newUser = {
-          ...currentUser,
-          id: users.length + 1 // Simple ID generation for demo
-        };
-        setUsers([...users, newUser]);
+        setUsers([...users, response]);
       } else if (modalMode === 'edit') {
-        // In a real app, this would be an API call
-        // await axios.put(`${API_BASE_URL}/admin/users/${currentUser.id}`, currentUser);
+        await axios.put(`${API_BASE_URL}/api/admin/edit/${currentUser._id}`, currentUser);
         
-        // For demo, we'll update the local state
-        const updatedUsers = users.map(user => 
+        const updatedUsers = users?.map(user => 
           user.id === currentUser.id ? currentUser : user
         );
         setUsers(updatedUsers);
@@ -188,24 +134,6 @@ const UserManagement = () => {
     } catch (err) {
       console.error('Error saving user:', err);
       alert('Failed to save user. Please try again.');
-    }
-  };
-
-  const toggleUserStatus = async (userId, currentStatus) => {
-    try {
-      // In a real app, this would be an API call
-      // await axios.patch(`${API_BASE_URL}/admin/users/${userId}/status`, {
-      //   isActive: !currentStatus
-      // });
-      
-      // For demo, we'll update the local state
-      const updatedUsers = users.map(user => 
-        user.id === userId ? {...user, isActive: !currentStatus} : user
-      );
-      setUsers(updatedUsers);
-    } catch (err) {
-      console.error('Error toggling user status:', err);
-      alert('Failed to update user status.');
     }
   };
 
@@ -237,7 +165,7 @@ const UserManagement = () => {
         </div>
       ) : (
         <div className="">
-          {users.map((user) => (
+          {users?.map((user) => (
             <div key={user.id} className="border-b  p-8  last:border-b-0 relative">
               <div className="p-4 bg-white  border border-blue-500">
                 <button 
@@ -262,14 +190,14 @@ const UserManagement = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
                         <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                       </svg>
-                      <span>{user.name}</span>
+                      <span>{user.username}</span>
                     </div>
                     
                     <div className="flex items-center">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                       </svg>
-                      <span>{user.phone || 'N/A'}</span>
+                      <span>{user.phoneNumber || 'N/A'}</span>
                     </div>
                     
                     <div className="flex items-center">
@@ -305,7 +233,7 @@ const UserManagement = () => {
                       <input 
                         type="checkbox" 
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        checked={user.permissions.coupons} 
+                        checked={user.permissions.couponsManagement} 
                         readOnly
                       />
                       <span className="ml-2">Coupons</span>
@@ -325,7 +253,7 @@ const UserManagement = () => {
                       <input 
                         type="checkbox" 
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        checked={user.permissions.inventory} 
+                        checked={user.permissions.inventoryManagement} 
                         readOnly
                       />
                       <span className="ml-2">Inventory</span>
@@ -335,7 +263,7 @@ const UserManagement = () => {
                       <input 
                         type="checkbox" 
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        checked={user.permissions.order} 
+                        checked={user.permissions.orderManagement} 
                         readOnly
                       />
                       <span className="ml-2">Order</span>
@@ -345,7 +273,7 @@ const UserManagement = () => {
                       <input 
                         type="checkbox" 
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        checked={user.permissions.analytics} 
+                        checked={user.permissions.analyticsManagement} 
                         readOnly
                       />
                       <span className="ml-2">Design Lab</span>
@@ -365,7 +293,7 @@ const UserManagement = () => {
                       <input 
                         type="checkbox" 
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
-                        checked={user.permissions.marketing} 
+                        checked={user.permissions.marketingManagement} 
                         readOnly
                       />
                       <span className="ml-2">Marketing</span>
@@ -410,8 +338,10 @@ const UserManagement = () => {
                       <input
                         type="text"
                         name="name"
-                        value={currentUser.name}
-                        onChange={handleInputChange}
+                        value={currentUser.username}
+                        onChange={
+                          (e) => setCurrentUser({...currentUser, username: e.target.value})
+                        }
                         className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Username"
                         required
@@ -432,7 +362,9 @@ const UserManagement = () => {
                         type="email"
                         name="email"
                         value={currentUser.email}
-                        onChange={handleInputChange}
+                        onChange={
+                          (e) => setCurrentUser({...currentUser, email: e.target.value})
+                        }
                         className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Email"
                       />
@@ -453,7 +385,9 @@ const UserManagement = () => {
                         type="password"
                         name="password"
                         value={currentUser.password}
-                        onChange={handleInputChange}
+                        onChange={
+                          (e) => setCurrentUser({...currentUser, password: e.target.value})
+                        }
                         className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
                         placeholder={modalMode === 'add' ? 'Password' : 'New Password'}
                         required={modalMode === 'add'}
@@ -472,8 +406,10 @@ const UserManagement = () => {
                       <input
                         type="text"
                         name="phone"
-                        value={currentUser.phone}
-                        onChange={handleInputChange}
+                        value={currentUser.phoneNumber}
+                        onChange={
+                          (e) => setCurrentUser({...currentUser, phoneNumber: e.target.value})
+                        }
                         className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Phone Number"
                       />
@@ -492,7 +428,9 @@ const UserManagement = () => {
                         type="text"
                         name="address"
                         value={currentUser.address}
-                        onChange={handleInputChange}
+                        onChange={
+                          (e) => setCurrentUser({...currentUser, address: e.target.value})
+                        }
                         className="border border-gray-300 rounded-md pl-10 py-2 w-full focus:ring-purple-500 focus:border-purple-500"
                         placeholder="Address"
                       />
@@ -531,8 +469,8 @@ const UserManagement = () => {
                       <input
                         type="checkbox"
                         id="orderManagement"
-                        checked={currentUser.permissions.order}
-                        onChange={() => handlePermissionChange('order')}
+                        checked={currentUser.permissions.orderManagement}
+                        onChange={() => handlePermissionChange('orderManagement')}
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                       />
                       <label htmlFor="orderManagement" className="ml-2">Order Management</label>
@@ -564,8 +502,8 @@ const UserManagement = () => {
                       <input
                         type="checkbox"
                         id="couponsManagement"
-                        checked={currentUser.permissions.coupons}
-                        onChange={() => handlePermissionChange('coupons')}
+                        checked={currentUser.permissions.couponsManagement}
+                        onChange={() => handlePermissionChange('couponsManagement')}
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                       />
                       <label htmlFor="couponsManagement" className="ml-2">Coupons Management</label>
@@ -575,8 +513,8 @@ const UserManagement = () => {
                       <input
                         type="checkbox"
                         id="inventoryManagement"
-                        checked={currentUser.permissions.inventory}
-                        onChange={() => handlePermissionChange('inventory')}
+                        checked={currentUser.permissions.inventoryManagement}
+                        onChange={() => handlePermissionChange('inventoryManagement')}
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                       />
                       <label htmlFor="inventoryManagement" className="ml-2">Inventory Management</label>
@@ -586,8 +524,8 @@ const UserManagement = () => {
                       <input
                         type="checkbox"
                         id="analyticsManagement"
-                        checked={currentUser.permissions.analytics}
-                        onChange={() => handlePermissionChange('analytics')}
+                        checked={currentUser.permissions.analyticsManagement}
+                        onChange={() => handlePermissionChange('analyticsManagement')}
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                       />
                       <label htmlFor="analyticsManagement" className="ml-2">Design Lab</label>
@@ -597,8 +535,8 @@ const UserManagement = () => {
                       <input
                         type="checkbox"
                         id="marketingManagement"
-                        checked={currentUser.permissions.marketing}
-                        onChange={() => handlePermissionChange('marketing')}
+                        checked={currentUser.permissions.marketingManagement}
+                        onChange={() => handlePermissionChange('marketingManagement')}
                         className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
                       />
                       <label htmlFor="marketingManagement" className="ml-2">Marketing Management</label>
