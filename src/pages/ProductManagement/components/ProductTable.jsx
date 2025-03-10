@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { CirclePlus, MoreVertical, X } from "lucide-react";
-import { productService } from "../../../services/productService";
-import { categoryService } from "../../../services/categoryService";
-import { variantService } from "../../../services/variantService";
 import { API_BASE_URL } from "../../../config/api";
-import EditModal from "./EditModal";
 
 const EditProductModal = ({ product, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -32,10 +28,6 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 
   const [categories, setCategories] = useState([]);
   const [variants, setVariants] = useState([]);
-  const [tags, setTags] = useState(product.tags || []);
-  const [materialCare, setMaterialCare] = useState(
-    (product.materialAndCare || "").split(", ").filter(Boolean)
-  );
   const [isPriceSame, setIsPriceSame] = useState(
     product.actualPrice === product.sellingPrice
   );
@@ -47,7 +39,8 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 
   const fetchCategories = async () => {
     try {
-      const data = await categoryService.getAllCategories();
+      const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
+      const data = await response.json();
       setCategories(data);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -56,7 +49,8 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 
   const fetchVariants = async () => {
     try {
-      const data = await variantService.getAllVariants();
+      const response = await fetch(`${API_BASE_URL}/variants/allvariants`);
+      const data = await response.json();
       setVariants(data);
     } catch (error) {
       console.error("Failed to fetch variants:", error);
@@ -73,7 +67,7 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-6xl my-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl my-8 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white px-6 py-4 border-b flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-gray-800">Edit Product</h2>
@@ -346,14 +340,14 @@ const EditProductModal = ({ product, onClose, onSave }) => {
 const DeleteConfirmationModal = ({ onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-[400px] text-center">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md text-center">
         <div className="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
           </svg>
         </div>
         <h2 className="text-xl font-semibold mb-2">Delete Product</h2>
-        <p className="text-gray-600 mb-6">Do you want to delete this order? This action Can't be undone</p>
+        <p className="text-gray-600 mb-6">Do you want to delete this product? This action cannot be undone.</p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onClose}
@@ -376,7 +370,7 @@ const DeleteConfirmationModal = ({ onClose, onConfirm }) => {
 const ViewProductDetails = ({ product, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-[90%] max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl my-8 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white px-6 py-4 border-b flex justify-between items-center">
           <h2 className="text-2xl font-semibold text-gray-800">Product Details</h2>
@@ -561,17 +555,18 @@ const ProductTable = ({ setAddForm }) => {
       const data = await response.json();
       setProducts(data);
       setFilteredProducts(data);
+      setIsLoading(false);
     } catch (error) {
       console.error("Error fetching products:", error);
       setError(error.message);
-    } finally {
       setIsLoading(false);
     }
   };
 
   const fetchCategories = async () => {
     try {
-      const data = await categoryService.getAllCategories();
+      const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
+      const data = await response.json();
       setCategories(data);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
@@ -583,14 +578,9 @@ const ProductTable = ({ setAddForm }) => {
     setSelectedCategory(categoryId);
 
     if (categoryId) {
-      console.log('Selected Category ID:', categoryId);
-      console.log('Products:', products);
-      
       const filtered = products.filter((product) => {
         return product.categoryId?._id === categoryId || product.categoryId === categoryId;
       });
-      
-      console.log('Filtered Products:', filtered);
       setFilteredProducts(filtered);
     } else {
       setFilteredProducts(products);
@@ -603,15 +593,20 @@ const ProductTable = ({ setAddForm }) => {
 
   const handleEdit = (product) => {
     setSelectedProduct(product);
+    setActiveMenu(null);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     setProductToDelete(id);
     setActiveMenu(null);
   };
 
   const confirmDelete = async () => {
     try {
+      await fetch(`${API_BASE_URL}/products/${productToDelete}`, {
+        method: 'DELETE',
+      });
+      
       const updatedProducts = products.filter((product) => product._id !== productToDelete);
       setProducts(updatedProducts);
       setFilteredProducts(updatedProducts);
@@ -630,13 +625,16 @@ const ProductTable = ({ setAddForm }) => {
         )
       );
       
-      // Optionally refresh the product list from the server
-      await fetchProducts();
+      // Update filtered products too
+      setFilteredProducts(prevFiltered => 
+        prevFiltered.map(product => 
+          product._id === updatedProduct._id ? updatedProduct : product
+        )
+      );
       
       setSelectedProduct(null); // Close the edit modal
     } catch (error) {
       console.error("Error updating product:", error);
-      alert(error.message || "Failed to update product");
     }
   };
 
@@ -645,22 +643,12 @@ const ProductTable = ({ setAddForm }) => {
     setActiveMenu(null);
   };
 
-  if (selectedProduct) {
-    return (
-      <EditModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onSave={handleUpdate}
-      />
-    );
-  }
-
   if (isLoading) {
-    return <div className="w-full text-center py-4">Loading...</div>;
+    return <div className="w-full text-center py-4">Loading products...</div>;
   }
 
   if (error) {
-    return <div className="w-full text-center py-4 text-red-500">{error}</div>;
+    return <div className="w-full text-center py-4 text-red-500">Error: {error}</div>;
   }
 
   return (
@@ -674,7 +662,7 @@ const ProductTable = ({ setAddForm }) => {
               <select
                 value={selectedCategory}
                 onChange={handleCategoryChange}
-                className="w-[10em] outline-none border-none"
+                className="w-full outline-none border-none"
               >
                 <option value="">All Categories</option>
                 {categories.map((category) => (
@@ -724,7 +712,7 @@ const ProductTable = ({ setAddForm }) => {
           </thead>
           <tbody>
             {filteredProducts.map((product, index) => (
-              <tr key={product._id || product.id} className="border-b hover:bg-gray-50">
+              <tr key={product._id || index} className="border-b hover:bg-gray-50">
                 <td className="px-6 py-4 text-gray-500">{index + 1}</td>
                 <td className="px-6 py-4 text-gray-500">
                   {product.productName}
@@ -733,12 +721,12 @@ const ProductTable = ({ setAddForm }) => {
                   {product.categoryName}
                 </td>
                 <td className="px-6 py-4 text-gray-500">
-                  {product.actualPrice || product.costPrice}
+                  ₹{product.actualPrice || product.costPrice}
                 </td>
                 <td className="px-6 py-4 text-gray-500">
-                  {product.sellingPrice}
+                  ₹{product.sellingPrice}
                 </td>
-                <td className="px-6 py-4 text-gray-500">{product.tax} %</td>
+                <td className="px-6 py-4 text-gray-500">{product.tax}%</td>
                 <td className="px-6 py-4 text-gray-500">{product.stock}</td>
                 <td className="px-6 py-4 text-gray-500">
                   <div className="relative">

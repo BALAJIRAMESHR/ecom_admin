@@ -15,7 +15,7 @@ const orderService = {
   getAllOrders: async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/orders`,
+        `${API_BASE_URL}/orders/myorders`,
         getAuthHeader()
       );
       return response.data;

@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Image, X, Upload, Plus, Camera } from 'lucide-react';
+// Import API config
+import { API_BASE_URL } from '../../../config/api';
 
 // Modal Component for adding new variants and customization types
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -347,11 +349,16 @@ const ProductForm = () => {
   const [activeCustomTypeId, setActiveCustomTypeId] = useState(null);
   
   // Product data
-  const [tags, setTags] = useState(['Bridal Silk', 'Sharee', 'Bridal', 'Women', 'Art work']);
+  const [tags, setTags] = useState([]);
   const [mainImages, setMainImages] = useState([]);
-  const [variants, setVariants] = useState(['Kanchipuram Bridal']);
+  const [variants, setVariants] = useState([]);
   const [newVariant, setNewVariant] = useState('');
   const [newTag, setNewTag] = useState('');
+  
+  // Category data
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [categoryError, setCategoryError] = useState(null);
   
   // Customization states
   const measurements = ['Shoulder', 'Chest', 'Bust', 'Under Bust', 'Waist', 'Hip', 'Under Arm'];
@@ -378,13 +385,58 @@ const ProductForm = () => {
   const standardSizes = ['XS', 'S', 'M', 'L', 'XL', '1X', '2X', '3X', '4X', '5X'];
   const [selectedSizes, setSelectedSizes] = useState({});
 
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  // Function to fetch categories from API
+ // Function to fetch categories from API
+const fetchCategories = async () => {
+  setIsLoadingCategories(true);
+  setCategoryError(null);
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch categories. Status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Check if data exists and handle different API response structures
+    if (data) {
+      // Check different possible structures of the API response
+      const categoriesData = Array.isArray(data) ? data : 
+                            (data.data && Array.isArray(data.data)) ? data.data :
+                            (data.categories && Array.isArray(data.categories)) ? data.categories : 
+                            null;
+      
+      if (categoriesData) {
+        setCategories(categoriesData);
+        console.log('Categories fetched successfully:', categoriesData);
+      } else {
+        console.error('Invalid category data format:', data);
+        setCategoryError('Invalid data format received from server');
+      }
+    } else {
+      setCategoryError('No data received from server');
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    setCategoryError(error.message || 'Failed to load categories');
+  } finally {
+    setIsLoadingCategories(false);
+  }
+};
+
   // Handle back button click
   const handleBackClick = () => {
     // Navigate back in history
     window.history.back();
     // If you're using a router like react-router, you can use:
     // navigate(-1);  
-    
   };
 
   // Input change handler
@@ -522,7 +574,7 @@ const ProductForm = () => {
         {/* Two-column layout */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Left Column - Product Info - with scrollable container */}
-          <div className="space-y-4 overflow-y-auto pr-4 pb-16" style={{ maxHeight: 'calc(100vh - 150px)' }}>
+          <div className="space-y-4 overflow-y-auto pr-4 pb-16">
             <div>
               <label className="block text-sm text-gray-700 mb-1">Product Name</label>
               <input
@@ -554,13 +606,17 @@ const ProductForm = () => {
                 value={formData.category}
                 onChange={handleInputChange}
                 className="w-full p-2 border rounded-md"
+                disabled={isLoadingCategories}
               >
                 <option value="">-Select Category-</option>
-                <option>Women</option>
-                <option>Men</option>
-                <option>Children</option>
-                <option>Accessories</option>
+                {categories.map((category) => (
+                  <option key={category._id || category.id} value={category._id || category.id}>
+                    {category.name || category.categoryName}
+                  </option>
+                ))}
               </select>
+              {isLoadingCategories && <p className="text-gray-500 text-sm mt-1">Loading categories...</p>}
+              {categoryError && <p className="text-red-500 text-sm mt-1">{categoryError}</p>}
             </div>
 
             <div>
@@ -769,7 +825,7 @@ const ProductForm = () => {
                     <div key={idx} className="relative group">
                       <img
                         src={img}
-                        alt={`Product ${idx + 1}`}
+                        alt={`Product image ${idx + 1}`}
                         className="w-full aspect-square object-cover rounded-lg"
                       />
                       <button
@@ -784,26 +840,12 @@ const ProductForm = () => {
               )}
             </div>
 
-            <div>
-              <label className="block text-sm text-gray-700 mb-1">Tax (in percentage)</label>
-              <input
-                type="text"
-                name="tax"
-                value={formData.tax}
-                onChange={handleInputChange}
-                placeholder="Enter tax percentage"
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
+            {/* Tags */}
             <div>
               <label className="block text-sm text-gray-700 mb-1">Tags</label>
               <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-                  >
+                {tags.map((tag, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1">
                     {tag}
                     <button
                       onClick={() => handleTagRemove(tag)}
@@ -819,7 +861,19 @@ const ProductForm = () => {
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={handleAddTag}
-                placeholder="Add a tag and press Enter"
+                placeholder="Enter tags and press Enter"
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Tax (%)</label>
+              <input
+                type="text"
+                name="tax"
+                value={formData.tax}
+                onChange={handleInputChange}
+                placeholder="Enter tax percentage"
                 className="w-full p-2 border rounded-md"
               />
             </div>
@@ -843,7 +897,7 @@ const ProductForm = () => {
                 name="color"
                 value={formData.color}
                 onChange={handleInputChange}
-                placeholder="Enter product color"
+                placeholder="Enter color"
                 className="w-full p-2 border rounded-md"
               />
             </div>
@@ -855,37 +909,38 @@ const ProductForm = () => {
                 name="displayStock"
                 value={formData.displayStock}
                 onChange={handleInputChange}
-                placeholder="Enter stock to display"
+                placeholder="Enter display stock"
                 className="w-full p-2 border rounded-md"
               />
             </div>
 
             {/* Update Button */}
-            <div className="mt-8">
+            <div className="pt-4">
               <button
                 onClick={handleUpdate}
-                className="w-full py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
               >
-                Update
+                Update Product
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Variant Modal */}
-      <Modal isOpen={showVariantModal} onClose={() => setShowVariantModal(false)} title="Add New Variant">
+      {/* Modals */}
+      <Modal
+        isOpen={showVariantModal}
+        onClose={() => setShowVariantModal(false)}
+        title="Add New Variant"
+      >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Variant Name</label>
-            <input
-              type="text"
-              value={newVariant}
-              onChange={(e) => setNewVariant(e.target.value)}
-              placeholder="Enter variant name"
-              className="w-full p-2 border rounded-md"
-            />
-          </div>
+          <input
+            type="text"
+            value={newVariant}
+            onChange={(e) => setNewVariant(e.target.value)}
+            placeholder="Enter variant name"
+            className="w-full p-2 border rounded-md"
+          />
           <div className="flex justify-end gap-2">
             <button
               onClick={() => setShowVariantModal(false)}
@@ -898,7 +953,7 @@ const ProductForm = () => {
               className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
               disabled={!newVariant.trim()}
             >
-              Add Variant
+              Add
             </button>
           </div>
         </div>
