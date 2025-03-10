@@ -347,9 +347,9 @@ const ProductForm = () => {
   const [activeCustomTypeId, setActiveCustomTypeId] = useState(null);
   
   // Product data
-  const [tags, setTags] = useState(['Bridal Silk', 'Sharee', 'Bridal', 'Women', 'Art work']);
+  const [tags, setTags] = useState([]);
   const [mainImages, setMainImages] = useState([]);
-  const [variants, setVariants] = useState(['Kanchipuram Bridal']);
+  const [variants, setVariants] = useState([]);
   const [newVariant, setNewVariant] = useState('');
   const [newTag, setNewTag] = useState('');
   
@@ -556,10 +556,6 @@ const ProductForm = () => {
                 className="w-full p-2 border rounded-md"
               >
                 <option value="">-Select Category-</option>
-                <option>Women</option>
-                <option>Men</option>
-                <option>Children</option>
-                <option>Accessories</option>
               </select>
             </div>
 

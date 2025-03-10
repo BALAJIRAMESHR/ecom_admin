@@ -1253,7 +1253,7 @@ const CouponsList = () => {
 // Main App Component
 const CouponManagement = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       <CouponsList />
     </div>
   );

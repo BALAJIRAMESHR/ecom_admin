@@ -104,16 +104,34 @@ const UserManagement = () => {
     }
   };
 
-  const handleInputChange = (setter) => (e) => {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setter((prev) => ({
+    setEditUser((prev) => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handlePermissionChange = (setter) => (permission) => {
-    setter(prev => ({
+  const handleNewUserChange = (e) => {
+    const { name, value } = e.target;
+    setNewUser(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePermissionChange = (permission) => {
+    setEditUser(prev => ({
+      ...prev,
+      permissions: {
+        ...prev.permissions,
+        [permission]: !prev.permissions[permission]
+      }
+    }));
+  };
+
+  const handleNewUserPermissionChange = (permission) => {
+    setNewUser(prev => ({
       ...prev,
       permissions: {
         ...prev.permissions,
@@ -153,7 +171,7 @@ const UserManagement = () => {
           type={field === 'email' ? 'email' : 'text'}
           name={field}
           value={currentUser[field] || ''}
-          onChange={handleInputChange(setEditUser)}
+          onChange={handleInputChange}
           className="flex-1 border-2 border-blue-200 rounded-lg p-2 text-base focus:outline-none focus:border-purple-400"
         />
       </div>
@@ -204,7 +222,7 @@ const UserManagement = () => {
               name={key}
               label={key.replace('Management', ' Management')}
               checked={currentUser.permissions[key]}
-              onChange={() => isEditing && handlePermissionChange(setEditUser)(key)}
+              onChange={() => isEditing && handlePermissionChange(key)}
               disabled={!isEditing}
             />
           ))}
@@ -233,24 +251,10 @@ const UserManagement = () => {
   };
 
 const CreateUserModal = () => {
-  // Create form reference to handle the submission properly
-  const formRef = React.useRef(null);
-
-  // Function to handle tab navigation between fields instead of Enter submission
-  const handleInputKeyDown = (e, nextFieldRef) => {
-    if (e.key === 'Enter' && nextFieldRef) {
-      e.preventDefault();
-      nextFieldRef.current?.focus();
-    }
+  const handleSubmitForm = (e) => {
+    e.preventDefault();
+    handleCreateUser(e);
   };
-
-  // Create separate refs for each input field
-  const usernameRef = React.useRef(null);
-  const emailRef = React.useRef(null);
-  const passwordRef = React.useRef(null);
-  const phoneRef = React.useRef(null);
-  const addressRef = React.useRef(null);
-  const submitRef = React.useRef(null);
 
   return (
     <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isCreateModalOpen ? '' : 'hidden'}`}>
@@ -259,14 +263,17 @@ const CreateUserModal = () => {
           <h2 className="text-2xl font-medium">Create New User</h2>
           <button 
             type="button"
-            onClick={() => setIsCreateModalOpen(false)} 
+            onClick={() => {
+              setIsCreateModalOpen(false);
+              setNewUser(INITIAL_USER_STATE);
+            }} 
             className="text-gray-500 text-2xl hover:text-gray-700"
           >
             ×
           </button>
         </div>
 
-        <form ref={formRef} onSubmit={handleCreateUser}>
+        <form onSubmit={handleSubmitForm}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-6">
               <div>
@@ -274,12 +281,10 @@ const CreateUserModal = () => {
                 <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
                   <span className="text-xl">👤</span>
                   <input
-                    ref={usernameRef}
                     type="text"
                     name="username"
-                    // value={newUser.username}
-                    // onChange={handleInputChange(setNewUser)}
-                    // onKeyDown={(e) => handleInputKeyDown(e, emailRef)}
+                    value={newUser.username}
+                    onChange={handleNewUserChange}
                     className="flex-1 outline-none text-base"
                     placeholder="Username"
                   />
@@ -290,7 +295,15 @@ const CreateUserModal = () => {
                 <div className="text-base mb-2">Email</div>
                 <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
                   <span className="text-xl">✉️</span>
-                <input type='email' ref={emailRef} name="username" className="flex-1 outline-none text-base"></input>
+                  <input 
+                    type="email" 
+                    name="email"
+                    value={newUser.email}
+                    onChange={handleNewUserChange}
+                    className="flex-1 outline-none text-base"
+                    placeholder="Email"
+                    autoComplete="off"
+                  />
                 </div>
               </div>
 
@@ -299,14 +312,13 @@ const CreateUserModal = () => {
                 <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
                   <span className="text-xl">🔒</span>
                   <input
-                    ref={passwordRef}
                     type="password"
                     name="password"
-                    // value={newUser.password}
-                    // onChange={handleInputChange(setNewUser)}
-                    // onKeyDown={(e) => handleInputKeyDown(e, phoneRef)}
+                    value={newUser.password}
+                    onChange={handleNewUserChange}
                     className="flex-1 outline-none text-base"
                     placeholder="Password"
+                    autoComplete="new-password"
                   />
                 </div>
               </div>
@@ -316,14 +328,13 @@ const CreateUserModal = () => {
                 <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
                   <span className="text-xl">📞</span>
                   <input
-                    ref={phoneRef}
                     type="text"
                     name="phoneNumber"
-                    // value={newUser.phoneNumber}
-                    // onChange={handleInputChange(setNewUser)}
-                    // onKeyDown={(e) => handleInputKeyDown(e, addressRef)}
+                    value={newUser.phoneNumber}
+                    onChange={handleNewUserChange}
                     className="flex-1 outline-none text-base"
                     placeholder="Phone Number"
+                    autoComplete="off"
                   />
                 </div>
               </div>
@@ -333,100 +344,48 @@ const CreateUserModal = () => {
                 <div className="border-2 border-blue-200 rounded-lg p-3 flex items-center gap-3">
                   <span className="text-xl">📍</span>
                   <input
-                    ref={addressRef}
                     type="text"
                     name="address"
-                    // value={newUser.address}
-                    // onChange={handleInputChange(setNewUser)}
-                    // onKeyDown={(e) => {
-                    //   if (e.key === 'Enter') {
-                    //     e.preventDefault();
-                    //   }
-                    // }}
+                    value={newUser.address}
+                    onChange={handleNewUserChange}
                     className="flex-1 outline-none text-base"
                     placeholder="Address"
+                    autoComplete="off"
                   />
                 </div>
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.productManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('productManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Product Management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.categoryManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('categoryManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Category Management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.orderManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('orderManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Order Management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.couponsManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('couponsManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Coupons Management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.inventoryManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('inventoryManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Inventory Management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.marketingManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('marketingManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">Marketing Management</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={newUser.permissions.userManagement}
-                  onChange={() => handlePermissionChange(setNewUser)('userManagement')}
-                  className="rounded border-gray-300"
-                />
-                <span className="text-sm">User Management</span>
-              </div>
+              {Object.keys(INITIAL_PERMISSIONS).map(permission => (
+                <div key={permission} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`perm-${permission}`}
+                    checked={newUser.permissions[permission]}
+                    onChange={() => handleNewUserPermissionChange(permission)}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor={`perm-${permission}`} className="text-sm">
+                    {permission.replace('Management', ' Management')}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="flex justify-end gap-2 mt-6">
             <button
               type="button"
-              onClick={() => setIsCreateModalOpen(false)}
+              onClick={() => {
+                setIsCreateModalOpen(false);
+                setNewUser(INITIAL_USER_STATE);
+              }}
               className="px-4 py-1.5 border border-red-200 text-red-600 rounded-md hover:bg-red-50"
             >
               Cancel
             </button>
             <button
-              ref={submitRef}
               type="submit"
               className="px-4 py-1.5 bg-purple-600 text-white rounded-md hover:bg-purple-700"
             >
