@@ -16,6 +16,7 @@ const Sidebar = ({ active }) => {
     localStorage.getItem("userPermissions") || "{}"
   );
 
+  const curent = window.location.pathname.split("/").pop();
   const handleLogout = () => {
     localStorage.removeItem("userPermissions");
     localStorage.removeItem("userRole");
@@ -42,7 +43,7 @@ const Sidebar = ({ active }) => {
       permission: "orderManagement",
     },
     {
-      name: "User Management",
+      name: "UserManagement",
       icon: <Users className="w-5" />,
       permission: "userManagement",
     },
@@ -78,7 +79,7 @@ const Sidebar = ({ active }) => {
   };
 
   return (
-    <div className="w-64 bg-white shadow-lg">
+    <div className="w-64 bg-white shadow-lg min-w-fit pr-6">
       <div className="p-4 flex items-center justify-center">
         <img src="/assets/header.svg" alt="Logo" className="w-24 h-24" />
       </div>
@@ -87,7 +88,7 @@ const Sidebar = ({ active }) => {
           <div
             key={index}
             className={`px-4 py-3 text-gray-700 flex items-center gap-3 hover:bg-purple-50 hover:text-purple-600 cursor-pointer ${
-              active === item.name
+              curent === item.name.toLowerCase()
                 ? "bg-purple-100 text-purple-600 border-l-4 border-purple-700"
                 : "border-l-4 border-white"
             }`}
