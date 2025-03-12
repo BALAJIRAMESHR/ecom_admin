@@ -154,6 +154,24 @@ const EditModal = ({ product, onClose, onSave }) => {
     vendor: product.vendor || "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [categories, setCategories] = useState([]);
+  // Add this near the top of your component where other state variables are defined
+const [loading, setLoading] = useState(false);
+
+useEffect(() => {
+  fetchCategories();
+}, []);
+
+const fetchCategories = async () => {
+  try {
+
+    const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
+    const data = await response.json();
+    setCategories(data);
+  } catch (error) {
+    console.error("Failed to fetch categories:", error);
+  }
+};
 
   const handleSubmit = async () => {
     setIsSaving(true);
@@ -201,15 +219,25 @@ const EditModal = ({ product, onClose, onSave }) => {
             </label>
             <select
               value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
+              onChange={(e) => {
+                const selectedCategory = e.target.value;
+                setFormData({ 
+                  ...formData, 
+                  category: selectedCategory,
+
+                });
+                
+                const categoryObj = categories.find(cat => cat.categoryName === selectedCategory);
+               
+              }}
               className="w-full p-2 border rounded focus:ring-purple-500 focus:border-purple-500"
             >
-              <option value="Saree">Saree</option>
-              <option value="Dress">Dress</option>
-              <option value="Accessories">Accessories</option>
-              <option value="Other">Other</option>
+              <option value="">Select a category</option>
+              {categories.map((category, index) => (
+                <option key={category._id || index} value={category.categoryName}>
+                  {category.categoryName}
+                </option>
+              ))}
             </select>
           </div>
 

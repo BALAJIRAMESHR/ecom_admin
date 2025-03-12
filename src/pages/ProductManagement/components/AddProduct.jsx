@@ -547,64 +547,84 @@ const fetchVariants = async () => {
   };
 
 
-  const addProduct = async (allData) => {
-    console.log(Object.keys(selectedSizes))
-    const productData = {
-      productName: allData.formData.productName,
-      productCode: allData.formData.productId,
-      categoryId: allData.formData.category,
-      categoryName: allData.formData.categoryName || "Sample",
-      variantName: allData.formData.variant,
-      variantId: allData.formData.variantId,
-      description: allData.formData.description,
-      standardSize: Object.keys(selectedSizes),
-      customization: allData.customizationEnabled,
-      stock: allData.formData.displayStock,
-      actualPrice: allData.formData.actualPrice,
-      sellingPrice: allData.formData.sellingPrice,
-      tags: allData.tags,
-      tax: allData.formData.tax,
-      couponCode: allData.formData.couponCode,
-      color: allData.formData.color,
-      availability: true,
-      images: mainImages,
-      isDesignLab: false,
-      customizationData: {
-        selectSize: {
-          shoulder: ["15"],
-          chest: ["40"],
-          bust: ["38"],
-          underBust: ["36"],
-          waist: ["32"],
-          hip: ["42"],
-          underArm: ["18"]
-        },
-        customizationType: [
-          {
-            typeName: "Type1",
-            standardImage: "standard1.jpg",
-            productImage: "product1.jpg"
-          },
-          {
-            typeName: "Type2",
-            standardImage: "standard2.jpg",
-            productImage: "product2.jpg"
-          }
-        ]
-      }
+const addProduct = async (allData) => {
+    // Extract selected inches into proper format for API
+    const selectedMeasurements = {
+        shoulder: [],
+        chest: [],
+        bust: [],
+        underBust: [],
+        waist: [],
+        hip: [],
+        underArm: []
     };
-  
+    
+    // Convert selectedInches object to arrays for each measurement type
+    Object.keys(allData.customMeasurements).forEach(key => {
+        // Only process selected (true) values
+        if (allData.customMeasurements[key]) {
+            // Split the key into measurement type and inch value
+            const [measurement, inch] = key.split('-');
+            
+            // Convert measurement name format (e.g., "Under Bust" to "underBust")
+            const measurementKey = measurement.toLowerCase().replace(/\s+(\w)/g, (_, letter) => letter.toUpperCase());
+            
+            // Add the inch value to the appropriate array
+            if (selectedMeasurements[measurementKey]) {
+                selectedMeasurements[measurementKey].push(`${inch}' inch`);
+            }
+        }
+    });
+    
+    console.log(Object.keys(selectedSizes));
+    const productData = {
+        productName: allData.formData.productName,
+        productCode: allData.formData.productId,
+        categoryId: allData.formData.category,
+        categoryName: allData.formData.categoryName || "Sample",
+        variantName: allData.formData.variant,
+        variantId: allData.formData.variantId,
+        description: allData.formData.description,
+        standardSize: Object.keys(selectedSizes),
+        customization: allData.customizationEnabled,
+        stock: allData.formData.displayStock,
+        actualPrice: allData.formData.actualPrice,
+        sellingPrice: allData.formData.sellingPrice,
+        tags: allData.tags,
+        tax: allData.formData.tax,
+        couponCode: allData.formData.couponCode,
+        color: allData.formData.color,
+        availability: true,
+        images: mainImages,
+        isDesignLab: false,
+        customizationData: {
+            selectSize: selectedMeasurements,
+            customizationType: [
+                {
+                    typeName: "1",
+                    standardImage: "",
+                    productImage: ""
+                },
+                {
+                    typeName: "",
+                    standardImage: "",
+                    productImage: ""
+                }
+            ]
+        }
+    };
+    
     console.log('Product data:', productData);
-
+    
     try {
-      const response = await axios.post(`${API_BASE_URL}/products/addproduct`, productData);
-      console.log('Product added successfully:', response.data);
-      alert('Product added successfully!');
+        const response = await axios.post(`${API_BASE_URL}/products/addproduct`, productData);
+        console.log('Product added successfully:', response.data);
+        alert('Product added successfully!');
     } catch (error) {
-      console.error('Error adding product:', error.response?.data?.message || error.message);
-      alert('Failed to add product. Please try again.');
+        console.error('Error adding product:', error.response?.data?.message || error.message);
+        alert('Failed to add product. Please try again.');
     }
-  };
+};
 
   return (
     <div className="w-full min-h-screen p-4">
