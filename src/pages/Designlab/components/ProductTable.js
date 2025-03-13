@@ -554,7 +554,7 @@ const ProductTable = ({ setAddForm }) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/products/getallproducts`);
+      const response = await fetch(`${API_BASE_URL}/products/getallproducts/design`);
       if (!response.ok) {
         throw new Error('Failed to fetch products');
       }

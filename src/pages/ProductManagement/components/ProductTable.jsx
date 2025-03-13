@@ -635,6 +635,7 @@ const ProductTable = ({ setAddForm }) => {
         throw new Error("Failed to fetch products");
       }
       const data = await response.json();
+      console.log("Products:", data);
       setProducts(data);
       setFilteredProducts(data);
       setIsLoading(false);
@@ -662,8 +663,7 @@ const ProductTable = ({ setAddForm }) => {
     if (categoryId) {
       const filtered = products.filter((product) => {
         return (
-          product.categoryId?._id === categoryId ||
-          product.categoryId === categoryId
+          product.categoryId?._id === categoryId
         );
       });
       setFilteredProducts(filtered);
@@ -688,8 +688,12 @@ const ProductTable = ({ setAddForm }) => {
 
   const confirmDelete = async () => {
     try {
-      await fetch(`${API_BASE_URL}/products/${productToDelete}`, {
-        method: "DELETE",
+      await fetch(`${API_BASE_URL}/products/editproduct/${productToDelete}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isDeleted: true }),
       });
 
       const updatedProducts = products.filter(

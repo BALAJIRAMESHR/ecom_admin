@@ -200,21 +200,21 @@ const AddCategoryModal = ({ onClose, onAdd, initialData, isEditing }) => {
           )}
         </div>
 
-        {/* Description Input */}
-        <input
-          type="text"
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setdescription(e.target.value)}
-          className="w-full px-3 py-2 border rounded-md mb-4"
-        />
-
         {/* Category Name Input */}
         <input
           type="text"
           placeholder="Category Name"
           value={categoryName}
           onChange={(e) => setCategoryName(e.target.value)}
+          className="w-full px-3 py-2 border rounded-md mb-4"
+        />
+
+        {/* Description Input */}
+        <input
+          type="text"
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setdescription(e.target.value)}
           className="w-full px-3 py-2 border rounded-md mb-4"
         />
 

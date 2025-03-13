@@ -99,32 +99,32 @@ const UserManagement = () => {
       if (modalMode === 'add') {
         const response = await axios.post(`${API_BASE_URL}/api/admin/add`, 
           {
-            username: currentUser.name,
+            username: currentUser.username,
             email: currentUser.email,
             password: currentUser.password,
-            phoneNumber: currentUser.phone,
+            phoneNumber: currentUser.phoneNumber,
             address: currentUser.address,
             isActive: currentUser.isActive,
             permissions: {
-                productManagement: currentUser.permissions.productManagement,
-                categoryManagement: currentUser.permissions.categoryManagement,
-                orderManagement: currentUser.permissions.order,
-                customerManagement: currentUser.permissions.customerManagement,
-                couponsManagement: currentUser.permissions.coupons,
-                inventoryManagement: currentUser.permissions.inventory,
+                productManagement: currentUser.permissions.productManagement || false,
+                categoryManagement: currentUser.permissions.categoryManagement || false,
+                orderManagement: currentUser.permissions.order || false,
+                customerManagement: currentUser.permissions.customerManagement || false,
+                couponsManagement: currentUser.permissions.coupons || false,
+                inventoryManagement: currentUser.permissions.inventory || false,
                 analyticsManagement: currentUser.permissions.analytics,
-                marketing: currentUser.permissions.marketing,
-                designLab: currentUser.permissions.userManagement
+                marketing: currentUser.permissions.marketing || false,
+                designLab: currentUser.permissions.userManagement || false
             }
         }
         );
         
-        setUsers([...users, response]);
+        fetchUsers();
       } else if (modalMode === 'edit') {
         await axios.put(`${API_BASE_URL}/api/admin/edit/${currentUser._id}`, currentUser);
         
         const updatedUsers = users?.map(user => 
-          user.id === currentUser.id ? currentUser : user
+          user._id === currentUser._id ? currentUser : user
         );
         setUsers(updatedUsers);
       }
@@ -297,6 +297,16 @@ const UserManagement = () => {
                         readOnly
                       />
                       <span className="ml-2">Marketing</span>
+                    </div>
+
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500"
+                        checked={user.permissions.userManagement} 
+                        readOnly
+                      />
+                      <span className="ml-2">User Management</span>
                     </div>
                   </div>
                 </div>

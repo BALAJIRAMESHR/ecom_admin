@@ -154,6 +154,7 @@ const EditModal = ({ product, onClose, onSave }) => {
         categoryId: formData.categoryId,
         categoryName: categories.find(cat => cat._id === formData.categoryId)?.categoryName || formData.categoryName,
         variantName: formData.variantName,
+        variantId: variants.find(variant => variant.variantName === formData.variantName)?._id || "",
         actualPrice: Number(formData.actualPrice),
         sellingPrice: Number(formData.sellingPrice),
         tax: Number(formData.tax),

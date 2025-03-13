@@ -12,8 +12,9 @@ import {
 import totalRevenue from "./tot-revnue.svg";
 import totalCustomer from "./tot-cus.svg";
 import totalProduct from "./tot-products.svg";
+import dashboardService from "../../../services/dashboardService";
+import { toast } from "react-toastify";
 
-// Dummy data for different time periods
 const timePeriodsData = {
   Today: {
     revenue: 5570,
@@ -147,7 +148,49 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("Today");
   const [chartWidth, setChartWidth] = useState(500);
   const chartContainerRef = useRef(null);
-  const currentData = timePeriodsData[selectedPeriod];
+  const [dashboardData, setDashboardData] = useState({
+    stats: {
+      customers: 0,
+      products: 0,
+      orders: 0,
+      revenue: 0,
+    },
+    recentOrders: [],
+    topProduct: null,
+    inventoryAlerts: [],
+    salesAnalytics: {},
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [stats, orders, products, inventory, analytics] = await Promise.all(
+        [
+          dashboardService.getDashboardStats(),
+          dashboardService.getRecentOrders(),
+          dashboardService.getTopProducts(1),
+          dashboardService.getInventoryAlerts(),
+          dashboardService.getSalesAnalytics(),
+        ]
+      );
+
+      setDashboardData({
+        stats,
+        recentOrders: orders,
+        topProduct: products[0],
+        inventoryAlerts: inventory,
+        salesAnalytics: analytics,
+      });
+    } catch (error) {
+      toast.error(error.message || "Failed to fetch dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const updateWidth = () => {
@@ -160,6 +203,12 @@ const Dashboard = () => {
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-full">Loading...</div>
+    );
+  }
 
   return (
     <div className="p-8  min-h-screen pl-0 pr-0">
@@ -187,14 +236,14 @@ const Dashboard = () => {
         {/* Left Section (75%) */}
         <div className="col-span-3 space-y-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-4 gap-6">
             {/* Revenue Card */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
               <p className="text-gray-400 mb-1">Total Revenue</p>
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-3xl font-bold">
-                    ${currentData.revenue.toLocaleString()}
+                    ${dashboardData.stats.revenue.toLocaleString()}
                   </h2>
                   <p className="text-xs text-gray-400">
                     +20%{" "}
@@ -230,10 +279,10 @@ const Dashboard = () => {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-3xl font-bold">
-                    {currentData.customers.toLocaleString()}
+                    {dashboardData.stats.customers.toLocaleString()}
                   </h2>
                   <p className="text-xs text-gray-400">
-                    +2%
+                    {dashboardData.stats.customerGrowth}%
                     <svg
                       width="16"
                       height="11"
@@ -265,9 +314,11 @@ const Dashboard = () => {
               <p className="text-gray-400 mb-1">Total Products</p>
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-3xl font-bold">{currentData.products}</h2>
+                  <h2 className="text-3xl font-bold">
+                    {dashboardData.stats.products}
+                  </h2>
                   <p className="text-xs text-gray-400">
-                    +5%{" "}
+                    {dashboardData.stats.productGrowth}%
                     <svg
                       width="16"
                       height="11"
@@ -304,7 +355,7 @@ const Dashboard = () => {
                 <LineChart
                   width={chartWidth}
                   height={250}
-                  data={currentData.salesData}
+                  data={timePeriodsData[selectedPeriod].salesData}
                 >
                   <XAxis dataKey="name" stroke="#94a3b8" />
                   <YAxis stroke="#94a3b8" />
@@ -325,7 +376,7 @@ const Dashboard = () => {
               <div className="h-64 flex justify-center">
                 <PieChart width={250} height={250}>
                   <Pie
-                    data={currentData.categoryData}
+                    data={timePeriodsData[selectedPeriod].categoryData}
                     cx={120}
                     cy={100}
                     innerRadius={60}
@@ -333,12 +384,14 @@ const Dashboard = () => {
                     paddingAngle={5}
                     dataKey="value"
                   >
-                    {currentData.categoryData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
-                    ))}
+                    {timePeriodsData[selectedPeriod].categoryData.map(
+                      (entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      )
+                    )}
                   </Pie>
                   <Legend verticalAlign="bottom" height={36} />
                 </PieChart>
@@ -373,17 +426,17 @@ const Dashboard = () => {
               className="space-y-8 overflow-y-auto"
               style={{ height: "calc(100% - 4rem)" }}
             >
-              {[2, 4, 1, 6, 8].map((stock, index) => (
+              {dashboardData.inventoryAlerts.map((item, index) => (
                 <div key={index} className="flex items-start gap-5">
                   <img
-                    src="/api/placeholder/64/64"
-                    alt="product"
+                    src={item.image || "/api/placeholder/64/64"}
+                    alt={item.name}
                     className="w-20 h-20 rounded-xl object-cover"
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-sm font-medium text-gray-700 truncate pr-4">
-                        Rani Pink Art Silk Saree
+                        {item.name}
                       </p>
                       <button className="text-purple-600 text-sm font-medium hover:text-purple-700 whitespace-nowrap transition-colors">
                         Add +
@@ -391,14 +444,20 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-baseline gap-1 mb-3">
                       <span className="text-2xl font-bold text-gray-800">
-                        {stock}
+                        {item.currentStock}
                       </span>
-                      <span className="text-sm text-gray-400">/200</span>
+                      <span className="text-sm text-gray-400">
+                        /{item.maxStock}
+                      </span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-1">
                       <div
                         className="bg-purple-300 h-1 rounded-full transition-all duration-300"
-                        style={{ width: `${(stock / 200) * 100}%` }}
+                        style={{
+                          width: `${
+                            (item.currentStock / item.maxStock) * 100
+                          }%`,
+                        }}
                       />
                     </div>
                   </div>
@@ -430,12 +489,14 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {currentData.orders.map((order) => (
-                  <tr key={order.id} className="text-sm text-gray-600">
-                    <td className="p-3">{order.id}</td>
-                    <td className="p-3">{order.item}</td>
-                    <td className="p-3">{order.time}</td>
-                    <td className="p-3">{order.price}</td>
+                {dashboardData.recentOrders.map((order) => (
+                  <tr key={order._id} className="text-sm text-gray-600">
+                    <td className="p-3">{order.customerId}</td>
+                    <td className="p-3">{order.itemName}</td>
+                    <td className="p-3">
+                      {new Date(order.createdAt).toLocaleString()}
+                    </td>
+                    <td className="p-3">₹{order.totalPrice}</td>
                   </tr>
                 ))}
               </tbody>
@@ -444,37 +505,41 @@ const Dashboard = () => {
         </div>
 
         {/* Top Product */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h3 className="text-gray-600 font-medium mb-4">Top Product</h3>
-          <div className="flex items-start gap-6">
-            {" "}
-            {/* Changed to items-start */}
-            <div className="grid grid-cols-2 gap-2 w-48">
+        {dashboardData.topProduct && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm">
+            <h3 className="text-gray-600 font-medium mb-4">Top Product</h3>
+            <div className="flex items-start gap-6">
               {" "}
-              {/* Fixed width for image container */}
-              <img
-                src="/api/placeholder/96/128"
-                alt="product view 1"
-                className="w-full h-32 rounded object-cover"
-              />
-              <img
-                src="/api/placeholder/96/128"
-                alt="product view 2"
-                className="w-full h-32 rounded object-cover"
-              />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-xl font-medium text-gray-800">
-                Rani Pink Art Silk Saree
-              </h4>
-              <p className="text-4xl font-bold text-purple-600 my-2">16</p>
-              <p className="text-sm text-gray-500">units sold</p>
-              <p className="text-sm text-purple-600 font-medium">
-                $200 revenue earned
-              </p>
+              {/* Changed to items-start */}
+              <div className="grid grid-cols-2 gap-2 w-48">
+                {" "}
+                {/* Fixed width for image container */}
+                {dashboardData.topProduct.images
+                  .slice(0, 2)
+                  .map((image, index) => (
+                    <img
+                      key={index}
+                      src={image}
+                      alt={`product view ${index + 1}`}
+                      className="w-full h-32 rounded object-cover"
+                    />
+                  ))}
+              </div>
+              <div className="flex-1">
+                <h4 className="text-xl font-medium text-gray-800">
+                  {dashboardData.topProduct.name}
+                </h4>
+                <p className="text-4xl font-bold text-purple-600 my-2">
+                  {dashboardData.topProduct.unitsSold}
+                </p>
+                <p className="text-sm text-gray-500">units sold</p>
+                <p className="text-sm text-purple-600 font-medium">
+                  ₹{dashboardData.topProduct.revenue} revenue earned
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

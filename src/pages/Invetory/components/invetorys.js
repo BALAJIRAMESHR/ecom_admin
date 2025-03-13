@@ -151,6 +151,7 @@ const EditModal = ({ product, onClose, onSave }) => {
     count: product.count,
     status: product.status,
     category: product.category,
+    categoryId: product.categoryId,
     vendor: product.vendor || "",
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -224,11 +225,9 @@ const fetchCategories = async () => {
                 setFormData({ 
                   ...formData, 
                   category: selectedCategory,
-
+                  categoryId: categories.find(cat => cat.categoryName === selectedCategory)._id
                 });
-                
                 const categoryObj = categories.find(cat => cat.categoryName === selectedCategory);
-               
               }}
               className="w-full p-2 border rounded focus:ring-purple-500 focus:border-purple-500"
             >
@@ -266,7 +265,7 @@ const fetchCategories = async () => {
               }
               className="w-full p-2 border rounded focus:ring-purple-500 focus:border-purple-500"
             >
-              <option value="In stock">In Stock</option>
+              <option value="In Stock">In Stock</option>
               <option value="Out of Stock">Out of Stock</option>
             </select>
           </div>
@@ -380,7 +379,7 @@ const FilterModal = ({ onClose, categories, onApplyFilters }) => {
               className="w-full p-2 border rounded focus:ring-purple-500 focus:border-purple-500"
             >
               <option value="">All Statuses</option>
-              <option value="In stock">In Stock</option>
+              <option value="In Stock">In Stock</option>
               <option value="Out of Stock">Out of Stock</option>
             </select>
           </div>
@@ -536,13 +535,13 @@ const InventoryManagement = () => {
   // Handle select all checkbox
   useEffect(() => {
     if (selectAll) {
-      setSelectedProducts(filteredProducts.map((product) => product.id));
+      setSelectedProducts(filteredProducts.map((product) => product._id));
     } else if (
       selectedProducts.length === filteredProducts.length &&
       filteredProducts.length > 0
     ) {
       // This condition prevents clearing selections when user manually selects all items
-      if (!filteredProducts.some((p) => !selectedProducts.includes(p.id))) {
+      if (!filteredProducts.some((p) => !selectedProducts.includes(p._id))) {
         setSelectedProducts([]);
       }
     }
@@ -571,7 +570,8 @@ const InventoryManagement = () => {
         id: product._id,
         name: product.productName,
         category: product.categoryName,
-        status: product.stock > 10 ? "In stock" : "Out of Stock",
+        categoryId: product.categoryId,
+        status: product.status,
         count: product.stock,
         vendor: product.vendor || "-------",
       }));
@@ -679,7 +679,8 @@ const InventoryManagement = () => {
         categoryName: updatedData.category,
         categoryId: updatedData.categoryId,
         stock: updatedData.count,
-        availability: updatedData.status === "In stock",
+        availability: updatedData.status === "In Stock",
+        status: updatedData.status,
         vendor: updatedData.vendor,
       };
 
@@ -914,7 +915,7 @@ const InventoryManagement = () => {
                       <td className="p-4">
                         <span
                           className={`px-2 py-1 rounded text-sm font-medium ${
-                            item.status === "In stock"
+                            item.status === "In Stock"
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
                           }`}

@@ -1,25 +1,26 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Image, X, Upload, Plus, Camera } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { Image, X, Upload, Plus, Camera } from "lucide-react";
 // Import API config
-import { API_BASE_URL } from '../../../config/api';
-import axios, { all } from 'axios';
+import { API_BASE_URL } from "../../../config/api";
+import axios, { all } from "axios";
 
 // Modal Component for adding new variants and customization types
 const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg w-full max-w-md">
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">{title}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-6">
-          {children}
-        </div>
+        <div className="p-6">{children}</div>
       </div>
     </div>
   );
@@ -28,13 +29,13 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 // Image Upload Modal Component
 const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
   const fileInputRef = useRef(null);
-  
+
   if (!isOpen) return null;
-  
+
   const handleFileSelect = () => {
     fileInputRef.current.click();
   };
-  
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       // In a real app, you would handle the file upload to a server
@@ -43,29 +44,34 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
       onClose();
     }
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg w-full max-w-md">
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">{title || "Upload Image"}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-6">
           <div className="space-y-6">
-            <div 
+            <div
               className="border-2 border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
               onClick={handleFileSelect}
             >
               <Camera className="w-16 h-16 text-gray-400" />
-              <p className="mt-4 text-center text-gray-500">Click to select an image from your device</p>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                className="hidden" 
+              <p className="mt-4 text-center text-gray-500">
+                Click to select an image from your device
+              </p>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="hidden"
                 accept="image/*"
               />
             </div>
@@ -93,13 +99,13 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
 // Add Customization Image Modal
 const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
   const fileInputRef = useRef(null);
-  
+
   if (!isOpen) return null;
-  
+
   const handleFileSelect = () => {
     fileInputRef.current.click();
   };
-  
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       // In a real app, you would handle the file upload to a server
@@ -108,26 +114,31 @@ const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
       onClose();
     }
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
       <div className="bg-white rounded-lg w-full max-w-md">
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-lg font-semibold">{title || "Add Image"}</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-6">
           <div className="space-y-4">
-            <div 
+            <div
               className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
               onClick={handleFileSelect}
             >
               <Image className="w-16 h-16 text-gray-400" />
-              <p className="mt-2 text-center text-gray-500">Drop your Files here or Browse</p>
+              <p className="mt-2 text-center text-gray-500">
+                Drop your Files here or Browse
+              </p>
             </div>
-            
+
             <div className="mt-2">
               <input
                 type="text"
@@ -135,15 +146,15 @@ const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
                 className="w-full p-2 border rounded-md"
               />
             </div>
-            
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              className="hidden" 
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              className="hidden"
               accept="image/*"
             />
-            
+
             <div className="flex justify-between gap-2 mt-4">
               <button
                 onClick={onClose}
@@ -170,9 +181,9 @@ const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
 
 // New CustomizationType Modal Component that includes image upload
 const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
-  const [typeName, setTypeName] = useState('');
+  const [typeName, setTypeName] = useState("");
   const [options, setOptions] = useState([]);
-  const [newOption, setNewOption] = useState('');
+  const [newOption, setNewOption] = useState("");
   const [images, setImages] = useState([]);
   const [showCustomImageModal, setShowCustomImageModal] = useState(false);
   const fileInputRef = useRef(null);
@@ -180,7 +191,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   const handleAddOption = () => {
     if (newOption.trim()) {
       setOptions([...options, newOption.trim()]);
-      setNewOption('');
+      setNewOption("");
     }
   };
 
@@ -191,7 +202,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   const handleFileSelect = () => {
     setShowCustomImageModal(true);
   };
-  
+
   const handleAddImage = (imagePath) => {
     setImages([...images, imagePath]);
   };
@@ -206,11 +217,11 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
         id: Date.now(),
         name: typeName.trim(),
         options: options,
-        images: images
+        images: images,
       });
-      
+
       // Reset form
-      setTypeName('');
+      setTypeName("");
       setOptions([]);
       setImages([]);
       onClose();
@@ -224,14 +235,19 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
       <div className="bg-white rounded-lg w-full max-w-md max-h-screen overflow-y-auto">
         <div className="flex justify-between items-center px-6 py-4 border-b sticky top-0 bg-white">
           <h2 className="text-lg font-semibold">Add New Customization Type</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
         <div className="p-6 space-y-6">
           {/* Type Name */}
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Type Name</label>
+            <label className="block text-sm text-gray-700 mb-1">
+              Type Name
+            </label>
             <input
               type="text"
               value={typeName}
@@ -240,7 +256,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
               className="w-full p-2 border rounded-md"
             />
           </div>
-          
+
           {/* Options */}
           <div>
             <label className="block text-sm text-gray-700 mb-1">Options</label>
@@ -259,11 +275,14 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
                 Add
               </button>
             </div>
-            
+
             {options.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {options.map((option, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1">
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1"
+                  >
                     {option}
                     <button
                       onClick={() => handleRemoveOption(idx)}
@@ -276,18 +295,20 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
               </div>
             )}
           </div>
-          
+
           {/* Image Upload */}
           <div>
             <label className="block text-sm text-gray-700 mb-1">Images</label>
-            <div 
+            <div
               className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-2"
               onClick={handleFileSelect}
             >
               <Camera className="w-12 h-12 text-gray-400" />
-              <p className="mt-2 text-center text-gray-500">Add images for this customization type</p>
+              <p className="mt-2 text-center text-gray-500">
+                Add images for this customization type
+              </p>
             </div>
-            
+
             {images.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
                 {images.map((img, idx) => (
@@ -308,7 +329,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
               </div>
             )}
           </div>
-          
+
           {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2">
             <button
@@ -327,7 +348,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
           </div>
         </div>
       </div>
-      
+
       {/* Custom Image Upload Modal */}
       <CustomizationImageModal
         isOpen={showCustomImageModal}
@@ -342,174 +363,196 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
 const ProductForm = () => {
   // Toggle state for customization
   const [showCustomization, setShowCustomization] = useState(false);
-  
+
   // Modal states
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [showCustomTypeModal, setShowCustomTypeModal] = useState(false);
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
   const [activeCustomTypeId, setActiveCustomTypeId] = useState(null);
-  
+
   // Product data
   const [tags, setTags] = useState([]);
   const [mainImages, setMainImages] = useState([]);
   const [variants, setVariants] = useState([]);
-  const [newVariant, setNewVariant] = useState('');
-  const [newTag, setNewTag] = useState('');
-  
+  const [newVariant, setNewVariant] = useState("");
+  const [newTag, setNewTag] = useState("");
+
   // Category data
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [categoryError, setCategoryError] = useState(null);
-  
+
   // Customization states
-  const measurements = ['Shoulder', 'Chest', 'Bust', 'Under Bust', 'Waist', 'Hip', 'Under Arm'];
+  const measurements = [
+    "Shoulder",
+    "Chest",
+    "Bust",
+    "Under Bust",
+    "Waist",
+    "Hip",
+    "Under Arm",
+  ];
   const [selectedInches, setSelectedInches] = useState({});
   const [customizationTypes, setCustomizationTypes] = useState([]);
 
   // Form data
   const [formData, setFormData] = useState({
-    productName: '',
-    productId: '0',
-    category: '',
-    variant: '',
-    description: '.',
-    actualPrice: '',
-    sellingPrice: '',
+    productName: "",
+    productId: "0",
+    category: "",
+    categoryName: "",
+    variant: "",
+    variantId: "",
+    description: ".",
+    actualPrice: "",
+    sellingPrice: "",
     isPriceSame: true,
-    tax: '',
-    couponCode: '',
-    color: '',
-    displayStock: ''
+    tax: "",
+    couponCode: "",
+    color: "",
+    displayStock: "",
   });
 
   // Standard sizes
-  const standardSizes = ['XS', 'S', 'M', 'L', 'XL', '1X', '2X', '3X', '4X', '5X'];
+  const standardSizes = [
+    "XS",
+    "S",
+    "M",
+    "L",
+    "XL",
+    "1X",
+    "2X",
+    "3X",
+    "4X",
+    "5X",
+  ];
   const [selectedSizes, setSelectedSizes] = useState({});
 
-  // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
     fetchVariants();
   }, []);
 
-  // Function to fetch categories from API
- // Function to fetch categories from API
-const fetchCategories = async () => {
-  setIsLoadingCategories(true);
-  setCategoryError(null);
+  const fetchCategories = async () => {
+    setIsLoadingCategories(true);
+    setCategoryError(null);
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch categories. Status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    // Check if data exists and handle different API response structures
-    if (data) {
-      // Check different possible structures of the API response
-      const categoriesData = Array.isArray(data) ? data : 
-                            (data.data && Array.isArray(data.data)) ? data.data :
-                            (data.categories && Array.isArray(data.categories)) ? data.categories : 
-                            null;
-      
-      if (categoriesData) {
-        setCategories(categoriesData);
-        console.log('Categories fetched successfully:', categoriesData);
-      } else {
-        console.error('Invalid category data format:', data);
-        setCategoryError('Invalid data format received from server');
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch categories. Status: ${response.status}`
+        );
       }
-    } else {
-      setCategoryError('No data received from server');
+
+      const data = await response.json();
+
+      // Check if data exists and handle different API response structures
+      if (data) {
+        // Check different possible structures of the API response
+        const categoriesData = Array.isArray(data)
+          ? data
+          : data.data && Array.isArray(data.data)
+          ? data.data
+          : data.categories && Array.isArray(data.categories)
+          ? data.categories
+          : null;
+
+        if (categoriesData) {
+          setCategories(categoriesData);
+          console.log("Categories fetched successfully:", categoriesData);
+        } else {
+          console.error("Invalid category data format:", data);
+          setCategoryError("Invalid data format received from server");
+        }
+      } else {
+        setCategoryError("No data received from server");
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategoryError(error.message || "Failed to load categories");
+    } finally {
+      setIsLoadingCategories(false);
     }
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    setCategoryError(error.message || 'Failed to load categories');
-  } finally {
-    setIsLoadingCategories(false);
-  }
-};
+  };
 
-const fetchVariants = async () => {
-  const getVariants = axios.get(`${API_BASE_URL}/variants/getallvariants`)
-  .then((response) => {
-    console.log(response);
-    setVariants(response.data);
-  })
-};
+  const fetchVariants = async () => {
+    const getVariants = axios
+      .get(`${API_BASE_URL}/variants/getallvariants`)
+      .then((response) => {
+        console.log(response);
+        setVariants(response.data);
+      });
+  };
 
-  // Handle back button click
   const handleBackClick = () => {
-    // Navigate back in history
     window.history.back();
-    // If you're using a router like react-router, you can use:
-    // navigate(-1);  
   };
 
   // Input change handler
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    console.log("Input changed:", name, value, type, checked);
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
 
-    if (name === 'isPriceSame' && checked) {
-      setFormData(prev => ({
+    if (name === "isPriceSame" && checked) {
+      setFormData((prev) => ({
         ...prev,
-        sellingPrice: prev.actualPrice
+        sellingPrice: prev.actualPrice,
       }));
     }
   };
 
   // Tag removal handler
   const handleTagRemove = (tagToRemove) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   // Add tag handler
   const handleAddTag = (e) => {
-    if (e.key === 'Enter' && newTag.trim()) {
+    if (e.key === "Enter" && newTag.trim()) {
       setTags([...tags, newTag.trim()]);
-      setNewTag('');
+      setNewTag("");
     }
   };
 
   // Image upload handler
   const handleImageUpload = (imagePath) => {
     if (mainImages.length >= 4) {
-      alert('Maximum 4 images allowed');
+      alert("Maximum 4 images allowed");
       return;
     }
-    
-    setMainImages(prev => [...prev, imagePath]);
-    console.log('Main Images:', [...mainImages, imagePath]);
+
+    setMainImages((prev) => [...prev, imagePath]);
+    console.log("Main Images:", [...mainImages, imagePath]);
   };
 
   // Image removal handler
   const removeImage = (index) => {
     const updatedImages = mainImages.filter((_, i) => i !== index);
     setMainImages(updatedImages);
-    console.log('Images after removal:', updatedImages);
+    console.log("Images after removal:", updatedImages);
   };
 
   // Add variant handler
   const handleAddVariant = () => {
     if (newVariant.trim()) {
-      axios.post(`${API_BASE_URL}/variants/addvariant`, {
-        variantName: newVariant
-      })
-      .then((response) => {
-        console.log(response);
-        const updatedVariants = [...variants, response.data];
-        setVariants(updatedVariants);
-        setNewVariant('');
-        setShowVariantModal(false);
-        console.log('Updated variants:', updatedVariants);
-      })
+      axios
+        .post(`${API_BASE_URL}/variants/addvariant`, {
+          variantName: newVariant,
+        })
+        .then((response) => {
+          console.log(response);
+          const updatedVariants = [...variants, response.data];
+          setVariants(updatedVariants);
+          setNewVariant("");
+          setShowVariantModal(false);
+          console.log("Updated variants:", updatedVariants);
+        });
     }
   };
 
@@ -517,15 +560,17 @@ const fetchVariants = async () => {
   const handleAddCustomType = (customType) => {
     const updatedTypes = [...customizationTypes, customType];
     setCustomizationTypes(updatedTypes);
-    console.log('Added new customization type:', customType);
-    console.log('Updated customization types:', updatedTypes);
+    console.log("Added new customization type:", customType);
+    console.log("Updated customization types:", updatedTypes);
   };
 
   // Remove a customization type
   const removeCustomizationType = (typeId) => {
-    const updatedTypes = customizationTypes.filter(type => type.id !== typeId);
+    const updatedTypes = customizationTypes.filter(
+      (type) => type.id !== typeId
+    );
     setCustomizationTypes(updatedTypes);
-    console.log('Removed customization type, remaining types:', updatedTypes);
+    console.log("Removed customization type, remaining types:", updatedTypes);
   };
 
   // Log all form data
@@ -538,93 +583,92 @@ const fetchVariants = async () => {
       selectedSizes,
       customizationEnabled: showCustomization,
       customMeasurements: selectedInches,
-      customizationTypes
+      customizationTypes,
     };
-    
-    console.log('Complete form data:', allData);
-    addProduct(allData)
-    alert('Product updated successfully!');
+
+    console.log("Complete form data:", allData);
+    addProduct(allData);
+    alert("Product updated successfully!");
   };
 
-
-const addProduct = async (allData) => {
-    // Extract selected inches into proper format for API
+  const addProduct = async (allData) => {
     const selectedMeasurements = {
-        shoulder: [],
-        chest: [],
-        bust: [],
-        underBust: [],
-        waist: [],
-        hip: [],
-        underArm: []
+      shoulder: [],
+      chest: [],
+      bust: [],
+      underBust: [],
+      waist: [],
+      hip: [],
+      underArm: [],
     };
-    
-    // Convert selectedInches object to arrays for each measurement type
-    Object.keys(allData.customMeasurements).forEach(key => {
-        // Only process selected (true) values
-        if (allData.customMeasurements[key]) {
-            // Split the key into measurement type and inch value
-            const [measurement, inch] = key.split('-');
-            
-            // Convert measurement name format (e.g., "Under Bust" to "underBust")
-            const measurementKey = measurement.toLowerCase().replace(/\s+(\w)/g, (_, letter) => letter.toUpperCase());
-            
-            // Add the inch value to the appropriate array
-            if (selectedMeasurements[measurementKey]) {
-                selectedMeasurements[measurementKey].push(`${inch}' inch`);
-            }
+
+    Object.keys(allData.customMeasurements).forEach((key) => {
+      if (allData.customMeasurements[key]) {
+        const [measurement, inch] = key.split("-");
+
+        const measurementKey = measurement
+          .toLowerCase()
+          .replace(/\s+(\w)/g, (_, letter) => letter.toUpperCase());
+
+        if (selectedMeasurements[measurementKey]) {
+          selectedMeasurements[measurementKey].push(`${inch}' inch`);
         }
+      }
     });
-    
-    console.log(Object.keys(selectedSizes));
+
     const productData = {
-        productName: allData.formData.productName,
-        productCode: allData.formData.productId,
-        categoryId: allData.formData.category,
-        categoryName: allData.formData.categoryName || "Sample",
-        variantName: allData.formData.variant,
-        variantId: allData.formData.variantId,
-        description: allData.formData.description,
-        standardSize: Object.keys(selectedSizes),
-        customization: allData.customizationEnabled,
-        stock: allData.formData.displayStock,
-        actualPrice: allData.formData.actualPrice,
-        sellingPrice: allData.formData.sellingPrice,
-        tags: allData.tags,
-        tax: allData.formData.tax,
-        couponCode: allData.formData.couponCode,
-        color: allData.formData.color,
-        availability: true,
-        images: mainImages,
-        isDesignLab: false,
-        customizationData: {
-            selectSize: selectedMeasurements,
-            customizationType: [
-                {
-                    typeName: "1",
-                    standardImage: "",
-                    productImage: ""
-                },
-                {
-                    typeName: "",
-                    standardImage: "",
-                    productImage: ""
-                }
-            ]
-        }
+      productName: allData.formData.productName,
+      productCode: allData.formData.productId,
+      categoryId: allData.formData.category,
+      categoryName: categories.find(
+        (cat) => cat._id === allData.formData.category
+      )?.categoryName,
+      variantName: allData.formData.variant,
+      variantId: variants.find(
+        (variant) => variant.variantName === allData.formData.variant
+      )?._id,
+      description: allData.formData.description,
+      standardSize: Object.keys(selectedSizes),
+      customization: allData.customizationEnabled,
+      stock: allData.formData.displayStock,
+      actualPrice: allData.formData.actualPrice,
+      sellingPrice: allData.formData.sellingPrice,
+      tags: allData.tags,
+      tax: allData.formData.tax,
+      couponCode: allData.formData.couponCode,
+      color: allData.formData.color,
+      availability: true,
+      images: mainImages,
+      isDesignLab: false,
+      customizationData: {
+        selectSize: selectedMeasurements,
+        customizationType: allData.customizationTypes.map((type) => ({
+          id: type.id,
+          typeName: type.name,
+          standardImage: type.images[0] || "Image 1",
+          customImage: type.images[1] || "Image 2",
+          options: type.options,
+        })),
+      },
     };
-    
-    console.log('Product data:', productData);
-    
+
+    console.log("Product data:", productData);
+
     try {
-        const response = await axios.post(`${API_BASE_URL}/products/addproduct`, productData);
-        console.log('Product added successfully:', response.data);
-        alert('Product added successfully!');
+      const response = await axios.post(
+        `${API_BASE_URL}/products/addproduct`,
+        productData
+      );
+      console.log("Product added successfully:", response.data);
+      alert("Product added successfully!");
     } catch (error) {
-        console.error('Error adding product:', error.response?.data?.message || error.message);
-        alert('Failed to add product. Please try again.');
+      console.error(
+        "Error adding product:",
+        error.response?.data?.message || error.message
+      );
+      alert("Failed to add product. Please try again.");
     }
-};
+  };
 
   return (
     <div className="w-full min-h-screen p-4">
@@ -640,16 +684,20 @@ const addProduct = async (allData) => {
                 checked={showCustomization}
                 onChange={(e) => {
                   setShowCustomization(e.target.checked);
-                  console.log('Customization toggled:', e.target.checked);
+                  console.log("Customization toggled:", e.target.checked);
                 }}
                 className="hidden"
               />
-              <div className={`w-12 h-6 rounded-full cursor-pointer transition-colors ${
-                showCustomization ? 'bg-purple-600' : 'bg-gray-200'
-              }`}>
-                <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  showCustomization ? 'translate-x-6' : 'translate-x-1'
-                } transform mt-0.5`} />
+              <div
+                className={`w-12 h-6 rounded-full cursor-pointer transition-colors ${
+                  showCustomization ? "bg-purple-600" : "bg-gray-200"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    showCustomization ? "translate-x-6" : "translate-x-1"
+                  } transform mt-0.5`}
+                />
               </div>
             </label>
           </div>
@@ -657,12 +705,21 @@ const addProduct = async (allData) => {
 
         {/* Back button */}
         <div className="mb-4">
-          <button 
+          <button
             onClick={handleBackClick}
             className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md flex items-center gap-2"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
+              />
             </svg>
             Back
           </button>
@@ -673,7 +730,9 @@ const addProduct = async (allData) => {
           {/* Left Column - Product Info - with scrollable container */}
           <div className="space-y-4 overflow-y-auto pr-4 pb-16">
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Product Name</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Product Name
+              </label>
               <input
                 type="text"
                 name="productName"
@@ -685,7 +744,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Product ID</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Product ID
+              </label>
               <input
                 type="text"
                 name="productId"
@@ -697,7 +758,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Category</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Category
+              </label>
               <select
                 name="category"
                 value={formData.category}
@@ -707,17 +770,28 @@ const addProduct = async (allData) => {
               >
                 <option value="">-Select Category-</option>
                 {categories.map((category) => (
-                  <option key={category._id || category.id} value={category._id || category.id}>
+                  <option
+                    key={category._id || category.id}
+                    value={category._id || category.id}
+                  >
                     {category.name || category.categoryName}
                   </option>
                 ))}
               </select>
-              {isLoadingCategories && <p className="text-gray-500 text-sm mt-1">Loading categories...</p>}
-              {categoryError && <p className="text-red-500 text-sm mt-1">{categoryError}</p>}
+              {isLoadingCategories && (
+                <p className="text-gray-500 text-sm mt-1">
+                  Loading categories...
+                </p>
+              )}
+              {categoryError && (
+                <p className="text-red-500 text-sm mt-1">{categoryError}</p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Variant</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Variant
+              </label>
               <div className="flex gap-2">
                 <select
                   name="variant"
@@ -726,11 +800,13 @@ const addProduct = async (allData) => {
                   className="w-full p-2 border rounded-md"
                 >
                   <option value="">-Select Variant-</option>
-                  {variants.map(variant => (
-                    <option key={variant._id} value={variant.variantName}>{variant.variantName}</option>
+                  {variants.map((variant) => (
+                    <option key={variant._id} value={variant.variantName}>
+                      {variant.variantName}
+                    </option>
                   ))}
                 </select>
-                <button 
+                <button
                   onClick={() => setShowVariantModal(true)}
                   className="px-4 py-2 border rounded-md hover:bg-gray-50"
                 >
@@ -740,9 +816,11 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Standard Size</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Standard Size
+              </label>
               <div className="grid grid-cols-5 gap-4">
-                {standardSizes.map(size => (
+                {standardSizes.map((size) => (
                   <label key={size} className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -750,10 +828,10 @@ const addProduct = async (allData) => {
                       onChange={(e) => {
                         const updated = {
                           ...selectedSizes,
-                          [size]: e.target.checked
+                          [size]: e.target.checked,
                         };
                         setSelectedSizes(updated);
-                        console.log('Selected sizes:', updated);
+                        console.log("Selected sizes:", updated);
                       }}
                       className="rounded"
                     />
@@ -767,21 +845,29 @@ const addProduct = async (allData) => {
             {showCustomization && (
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold">Custom Size</h2>
-                {measurements.map(measurement => (
-                  <div key={measurement} className="grid grid-cols-5 gap-2 items-center">
+                {measurements.map((measurement) => (
+                  <div
+                    key={measurement}
+                    className="grid grid-cols-5 gap-2 items-center"
+                  >
                     <div className="font-medium">{measurement}</div>
-                    {[1, 2, 3, 4].map(inch => (
-                      <label key={`${measurement}-${inch}`} className="flex items-center gap-1">
+                    {[1, 2, 3, 4].map((inch) => (
+                      <label
+                        key={`${measurement}-${inch}`}
+                        className="flex items-center gap-1"
+                      >
                         <input
                           type="checkbox"
-                          checked={selectedInches[`${measurement}-${inch}`] || false}
+                          checked={
+                            selectedInches[`${measurement}-${inch}`] || false
+                          }
                           onChange={(e) => {
                             const updated = {
                               ...selectedInches,
-                              [`${measurement}-${inch}`]: e.target.checked
+                              [`${measurement}-${inch}`]: e.target.checked,
                             };
                             setSelectedInches(updated);
-                            console.log('Selected inches:', updated);
+                            console.log("Selected inches:", updated);
                           }}
                           className="rounded"
                         />
@@ -798,9 +884,11 @@ const addProduct = async (allData) => {
               <div className="space-y-6">
                 <h2 className="text-lg font-semibold">Customization Types</h2>
                 {customizationTypes.length === 0 && (
-                  <p className="text-gray-500">No customization types added yet</p>
+                  <p className="text-gray-500">
+                    No customization types added yet
+                  </p>
                 )}
-                {customizationTypes.map(type => (
+                {customizationTypes.map((type) => (
                   <div key={type.id} className="space-y-2 border-b pb-4">
                     <div className="flex justify-between items-center">
                       <div className="font-medium">{type.name}</div>
@@ -811,28 +899,35 @@ const addProduct = async (allData) => {
                         <X className="w-4 h-4" />
                       </button>
                     </div>
-                    
+
                     {type.options.length > 0 && (
                       <div>
-                        <div className="text-sm text-gray-500 mb-1">Options:</div>
+                        <div className="text-sm text-gray-500 mb-1">
+                          Options:
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {type.options.map((option, idx) => (
-                            <span key={idx} className="px-3 py-1 bg-gray-100 rounded-full">
+                            <span
+                              key={idx}
+                              className="px-3 py-1 bg-gray-100 rounded-full"
+                            >
                               {option}
                             </span>
                           ))}
                         </div>
                       </div>
                     )}
-                    
+
                     {type.images.length > 0 && (
                       <div>
-                        <div className="text-sm text-gray-500 mb-1">Images:</div>
+                        <div className="text-sm text-gray-500 mb-1">
+                          Images:
+                        </div>
                         <div className="grid grid-cols-4 gap-2">
                           {type.images.map((img, idx) => (
                             <div key={idx} className="relative group">
-                              <img 
-                                src={img} 
+                              <img
+                                src={img}
                                 alt={`${type.name} ${idx + 1}`}
                                 className="w-full aspect-square object-cover rounded-lg"
                               />
@@ -854,7 +949,9 @@ const addProduct = async (allData) => {
             )}
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Description</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Description
+              </label>
               <textarea
                 name="description"
                 value={formData.description}
@@ -866,7 +963,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Actual Price</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Actual Price
+              </label>
               <input
                 type="text"
                 name="actualPrice"
@@ -878,7 +977,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Selling Price</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Selling Price
+              </label>
               <input
                 type="text"
                 name="sellingPrice"
@@ -907,12 +1008,14 @@ const addProduct = async (allData) => {
             {/* Image Upload Area */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
               <div className="text-center">
-                <div 
+                <div
                   onClick={() => setShowImageUploadModal(true)}
                   className="cursor-pointer flex flex-col items-center justify-center"
                 >
                   <Upload className="w-12 h-12 text-gray-400" />
-                  <p className="mt-2 text-sm text-gray-500">Drop your Files here or Browse</p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Drop your Files here or Browse
+                  </p>
                   <p className="text-xs text-gray-400">Max 4 images allowed</p>
                 </div>
               </div>
@@ -942,7 +1045,10 @@ const addProduct = async (allData) => {
               <label className="block text-sm text-gray-700 mb-1">Tags</label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {tags.map((tag, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1">
+                  <span
+                    key={idx}
+                    className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1"
+                  >
                     {tag}
                     <button
                       onClick={() => handleTagRemove(tag)}
@@ -964,7 +1070,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Tax (%)</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Tax (%)
+              </label>
               <input
                 type="text"
                 name="tax"
@@ -976,7 +1084,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Coupon Code</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Coupon Code
+              </label>
               <input
                 type="text"
                 name="couponCode"
@@ -1000,7 +1110,9 @@ const addProduct = async (allData) => {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 mb-1">Display Stock</label>
+              <label className="block text-sm text-gray-700 mb-1">
+                Display Stock
+              </label>
               <input
                 type="text"
                 name="displayStock"

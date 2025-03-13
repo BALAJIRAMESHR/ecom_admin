@@ -154,6 +154,7 @@ const EditModal = ({ product, onClose, onSave }) => {
         categoryId: formData.categoryId,
         categoryName: categories.find(cat => cat._id === formData.categoryId)?.categoryName || formData.categoryName,
         variantName: formData.variantName,
+        variantId: variants.find(variant => variant.variantName === formData.variantName)?._id || "",
         actualPrice: Number(formData.actualPrice),
         sellingPrice: Number(formData.sellingPrice),
         tax: Number(formData.tax),
@@ -356,26 +357,6 @@ const EditModal = ({ product, onClose, onSave }) => {
                       disabled={isPriceSame}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={isPriceSame}
-                      onChange={(e) => {
-                        setIsPriceSame(e.target.checked);
-                        if (e.target.checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            sellingPrice: prev.actualPrice
-                          }));
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                    <label className="text-sm text-gray-600">
-                      Same as Cost Price
-                    </label>
                   </div>
                 </div>
               </div>
