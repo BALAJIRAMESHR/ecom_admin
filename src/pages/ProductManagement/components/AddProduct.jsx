@@ -38,9 +38,9 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      // In a real app, you would handle the file upload to a server
-      // For this demo, we'll just use a placeholder
-      onUpload(`/api/placeholder/400/300`);
+      const filesArray = Array.from(e.target.files);
+      console.log("Selected files:", filesArray);
+      onUpload(filesArray);
       onClose();
     }
   };
@@ -73,6 +73,7 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
                 onChange={handleFileChange}
                 className="hidden"
                 accept="image/*"
+                multiple
               />
             </div>
             <div className="flex justify-end gap-2">
@@ -203,7 +204,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
     setShowCustomImageModal(true);
   };
 
-const handleAddImage = (imagePath) => {
+  const handleAddImage = (imagePath) => {
     // Check if adding this image would exceed the limit
     if (images.length >= 2) {
       alert("Maximum 2 images allowed");
@@ -263,7 +264,6 @@ const handleAddImage = (imagePath) => {
           </div>
 
           {/* Options */}
-         
 
           {/* Image Upload */}
           <div>
@@ -273,12 +273,10 @@ const handleAddImage = (imagePath) => {
               onClick={handleFileSelect}
             >
               <Camera className="w-12 h-12 text-gray-400" />
-              <p className="mt-2 text-center text-gray-500">
-                Add images 
-              </p>
+              <p className="mt-2 text-center text-gray-500">Add images</p>
             </div>
 
-       {images.length > 0 && (
+            {images.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
                 {images.map((img, idx) => (
                   <div key={idx} className="relative group">
@@ -298,10 +296,6 @@ const handleAddImage = (imagePath) => {
               </div>
             )}
           </div>
-
-         
- 
-
 
           {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2">
@@ -493,18 +487,15 @@ const ProductForm = () => {
     }
   };
 
-  // Image upload handler
-  const handleImageUpload = (imagePath) => {
-    if (mainImages.length >= 4) {
-      alert("Maximum 4 images allowed");
-      return;
-    }
-
-    setMainImages((prev) => [...prev, imagePath]);
-    console.log("Main Images:", [...mainImages, imagePath]);
+  const handleImageUpload = (files) => {
+    const imageFiles = files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    setMainImages((prev) => [...prev, ...imageFiles]);
+    console.log("Main Images:", [...mainImages, ...imageFiles]);
   };
 
-  // Image removal handler
   const removeImage = (index) => {
     const updatedImages = mainImages.filter((_, i) => i !== index);
     setMainImages(updatedImages);
@@ -589,6 +580,26 @@ const ProductForm = () => {
       }
     });
 
+    let imageLinks = [];
+    if (mainImages) {
+      for (let i = 0; i < mainImages.length; i++) {
+        const formData = new FormData();
+        formData.append("file", mainImages[i].file);
+        const imageUploadResponse = await axios({
+          method: "post",
+          url: "/upload",
+          data: formData,
+          headers: {
+            Authorization: "QuindlTokPATFileUpload2025#$$TerOiu$",
+            "Content-Type": "multipart/form-data",
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        });
+        imageLinks.push(imageUploadResponse.data.filePath);
+      }
+    }
+    console.log("Image Links:", imageLinks);
     const productData = {
       productName: allData.formData.productName,
       productCode: allData.formData.productId,
@@ -611,7 +622,7 @@ const ProductForm = () => {
       couponCode: allData.formData.couponCode,
       color: allData.formData.color,
       availability: true,
-      images: mainImages,
+      images: imageLinks,
       isDesignLab: false,
       customizationData: {
         selectSize: selectedMeasurements,
@@ -994,10 +1005,10 @@ const ProductForm = () => {
               </div>
               {mainImages.length > 0 && (
                 <div className="grid grid-cols-2 gap-4 mt-4">
-                  {mainImages.map((img, idx) => (
+                  {mainImages.map((imgObj, idx) => (
                     <div key={idx} className="relative group">
                       <img
-                        src={img}
+                        src={imgObj.url}
                         alt={`Product image ${idx + 1}`}
                         className="w-full aspect-square object-cover rounded-lg"
                       />
