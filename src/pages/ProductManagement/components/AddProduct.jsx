@@ -203,7 +203,12 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
     setShowCustomImageModal(true);
   };
 
-  const handleAddImage = (imagePath) => {
+const handleAddImage = (imagePath) => {
+    // Check if adding this image would exceed the limit
+    if (images.length >= 2) {
+      alert("Maximum 2 images allowed");
+      return;
+    }
     setImages([...images, imagePath]);
   };
 
@@ -258,43 +263,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
           </div>
 
           {/* Options */}
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Options</label>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={newOption}
-                onChange={(e) => setNewOption(e.target.value)}
-                placeholder="Enter option value"
-                className="w-full p-2 border rounded-md"
-              />
-              <button
-                onClick={handleAddOption}
-                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 whitespace-nowrap"
-              >
-                Add
-              </button>
-            </div>
-
-            {options.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {options.map((option, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 bg-gray-100 rounded-full flex items-center gap-1"
-                  >
-                    {option}
-                    <button
-                      onClick={() => handleRemoveOption(idx)}
-                      className="text-gray-500 hover:text-gray-700"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+         
 
           {/* Image Upload */}
           <div>
@@ -305,12 +274,12 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
             >
               <Camera className="w-12 h-12 text-gray-400" />
               <p className="mt-2 text-center text-gray-500">
-                Add images for this customization type
+                Add images 
               </p>
             </div>
 
-            {images.length > 0 && (
-              <div className="grid grid-cols-3 gap-2">
+       {images.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
                 {images.map((img, idx) => (
                   <div key={idx} className="relative group">
                     <img
@@ -329,6 +298,10 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
               </div>
             )}
           </div>
+
+         
+ 
+
 
           {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2">
@@ -354,7 +327,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
         isOpen={showCustomImageModal}
         onClose={() => setShowCustomImageModal(false)}
         onUpload={handleAddImage}
-        title="Add Neck Line Image"
+        title="Add  Image"
       />
     </div>
   );

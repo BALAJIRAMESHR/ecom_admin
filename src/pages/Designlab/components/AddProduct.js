@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { Image, X, Upload, Plus, Camera } from 'lucide-react';
+import { Image, X, Upload, Plus, Camera, ArrowLeft } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 // Modal Component
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -89,7 +90,7 @@ const ProductForm = () => {
   // Initial form state
   const initialFormData = {
     productName: '',
-    productId: '',
+    productcode: '',
     variant: '-select-',
     description: '',
     actualPrice: '',
@@ -103,12 +104,15 @@ const ProductForm = () => {
     letterCodes: ''
   };
 
-  // Initial sizes state
+  // Size options
+  const sizes = ['XS', 'S', 'M', 'L', 'XL', '1X', '2X', '3X', '4X', '5X'];
+
+  // Initial sizes state as arrays
   const initialSizesState = {
-    kids: {},
-    adult: {},
-    youth: {},
-    women: {}
+    kids: [],
+    adult: [],
+    youth: [],
+    women: []
   };
 
   // Form data state
@@ -156,15 +160,21 @@ const ProductForm = () => {
     }
   };
   
-  // Size checkbox handler
+  // Size checkbox handler - now adds/removes from array
   const handleSizeCheck = (category, size, checked) => {
-    setSelectedSizes(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [size]: checked
-      }
-    }));
+    if (checked) {
+      // Add the size to the array if it doesn't exist
+      setSelectedSizes(prev => ({
+        ...prev,
+        [category]: [...prev[category], size]
+      }));
+    } else {
+      // Remove the size from the array
+      setSelectedSizes(prev => ({
+        ...prev,
+        [category]: prev[category].filter(s => s !== size)
+      }));
+    }
   };
   
   // Tag handlers
@@ -201,6 +211,8 @@ const ProductForm = () => {
       setShowVariantModal(false);
     }
   };
+
+  const navigate = useNavigate();
   
   // Form submission
   const handleUpdate = () => {
@@ -219,11 +231,20 @@ const ProductForm = () => {
     resetForm();
   };
   
-  // Size options
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', '1X', '2X', '3X', '4X', '5X'];
-  
   return (
     <div className="w-full py-4 px-6">
+      {/* Back button at the top */}
+      <div className="mb-4">
+        <button 
+         onClick={() => navigate(-1)}
+          
+          className="flex items-center text-purple-600 hover:text-purple-800"
+        >
+          <ArrowLeft className="w-5 h-5 mr-1" />
+          <span>Back </span>
+        </button>
+      </div>
+      
       <h1 className="text-2xl font-bold mb-6">Add Product</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -242,11 +263,11 @@ const ProductForm = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Product ID</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Product Code</label>
             <input
               type="text"
-              name="productId"
-              value={formData.productId}
+              name="productcode"
+              value={formData.productcode}
               onChange={handleInputChange}
               className="w-full p-2 border border-gray-300 rounded-md"
               placeholder="Enter product ID"
@@ -284,7 +305,7 @@ const ProductForm = () => {
                 <label key={`kids-${size}`} className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={selectedSizes.kids[size] || false}
+                    checked={selectedSizes.kids.includes(size)}
                     onChange={(e) => handleSizeCheck('kids', size, e.target.checked)}
                     className="mr-2"
                   />
@@ -302,7 +323,7 @@ const ProductForm = () => {
                 <label key={`adult-${size}`} className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={selectedSizes.adult[size] || false}
+                    checked={selectedSizes.adult.includes(size)}
                     onChange={(e) => handleSizeCheck('adult', size, e.target.checked)}
                     className="mr-2"
                   />
@@ -320,7 +341,7 @@ const ProductForm = () => {
                 <label key={`youth-${size}`} className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={selectedSizes.youth[size] || false}
+                    checked={selectedSizes.youth.includes(size)}
                     onChange={(e) => handleSizeCheck('youth', size, e.target.checked)}
                     className="mr-2"
                   />
@@ -338,7 +359,7 @@ const ProductForm = () => {
                 <label key={`women-${size}`} className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={selectedSizes.women[size] || false}
+                    checked={selectedSizes.women.includes(size)}
                     onChange={(e) => handleSizeCheck('women', size, e.target.checked)}
                     className="mr-2"
                   />
@@ -399,7 +420,7 @@ const ProductForm = () => {
             />
           </div>
           
-          {/* Selling Price */}
+         {/* Selling Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price</label>
             <input
@@ -547,7 +568,7 @@ const ProductForm = () => {
           
           {/* Button Group */}
           <div className="mt-8 flex gap-4">
-           
+            
             <button
               onClick={handleUpdate}
               className="w-2/3 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700"
