@@ -97,107 +97,17 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload, title }) => {
   );
 };
 
-// Add Customization Image Modal
-const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
-  const fileInputRef = useRef(null);
-
-  if (!isOpen) return null;
-
-  const handleFileSelect = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      // In a real app, you would handle the file upload to a server
-      // For this demo, we'll just use a placeholder
-      onUpload(`/api/placeholder/400/300`);
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-      <div className="bg-white rounded-lg w-full max-w-md">
-        <div className="flex justify-between items-center px-6 py-4 border-b">
-          <h2 className="text-lg font-semibold">{title || "Add Image"}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6">
-          <div className="space-y-4">
-            <div
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
-              onClick={handleFileSelect}
-            >
-              <Image className="w-16 h-16 text-gray-400" />
-              <p className="mt-2 text-center text-gray-500">
-                Drop your Files here or Browse
-              </p>
-            </div>
-
-            <div className="mt-2">
-              <input
-                type="text"
-                placeholder="Enter a Name"
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              className="hidden"
-              accept="image/*"
-            />
-
-            <div className="flex justify-between gap-2 mt-4">
-              <button
-                onClick={onClose}
-                className="w-full px-4 py-2 border rounded-md hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  onUpload(`/api/placeholder/400/300`);
-                  onClose();
-                }}
-                className="w-full px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-              >
-                Add
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-
-
-
-
 const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   const [typeName, setTypeName] = useState("");
   const [options, setOptions] = useState([]);
   const [newOption, setNewOption] = useState("");
-  
+
   // Image 1 state
   const [image1, setImage1] = useState(null);
-
-  const [newImage1Tag, setNewImage1Tag] = useState("");
   const fileInput1Ref = useRef(null);
-  
+
   // Image 2 state
   const [image2, setImage2] = useState(null);
-  const [newImage2Tag, setNewImage2Tag] = useState("");
   const fileInput2Ref = useRef(null);
 
   // Options management
@@ -209,7 +119,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   };
 
   const handleKeyDownOption = (e) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddOption();
     }
@@ -227,36 +137,14 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   const handleFileChange1 = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage1(e.target.result);
-      };
-      reader.readAsDataURL(file);
+      const imageUrl = URL.createObjectURL(file);
+      setImage1({ file, url: imageUrl });
     }
   };
 
   const handleRemoveImage1 = () => {
     setImage1(null);
-
   };
-
-  const handleAddImage1Tag = () => {
-    if (newImage1Tag.trim()) {
-      // setImage1Tags([...image1Tags, newImage1Tag.trim()]);
-      setNewImage1Tag("");
-    }
-  };
-
-  const handleKeyDownImage1Tag = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddImage1Tag();
-    }
-  };
-
-  // const handleRemoveImage1Tag = (index) => {
-  //   setImage1Tags(image1Tags.filter((_, i) => i !== index));
-  // };
 
   // Image 2 management
   const handleFileSelect2 = () => {
@@ -266,61 +154,56 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   const handleFileChange2 = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setImage2(e.target.result);
-      };
-      reader.readAsDataURL(file);
+      const imageUrl = URL.createObjectURL(file);
+      setImage2({ file, url: imageUrl });
     }
   };
 
   const handleRemoveImage2 = () => {
     setImage2(null);
-    // setImage2Tags([]);
   };
 
-  const handleAddImage2Tag = () => {
-    if (newImage2Tag.trim()) {
-      // setImage2Tags([...image2Tags, newImage2Tag.trim()]);
-      setNewImage2Tag("");
+  // Image upload function
+  const uploadImage = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post("/upload", formData, {
+        headers: {
+          Authorization: "QuindlTokPATFileUpload2025#$$TerOiu$",
+          "Content-Type": "multipart/form-data",
+        },
+        maxBodyLength: Infinity,
+        maxContentLength: Infinity,
+      });
+      return response.data.filePath;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
     }
   };
-
-  const handleKeyDownImage2Tag = (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleAddImage2Tag();
-    }
-  };
-
-  // const handleRemoveImage2Tag = (index) => {
-  //   setImage2Tags(image2Tags.filter((_, i) => i !== index));
-  // };
 
   // Form submission
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (typeName.trim()) {
       const images = [];
-      
+
       if (image1) {
-        images.push({
-          path: image1,
-          // tags: image1Tags
-        });
+        const imageUrl = await uploadImage(image1.file);
+        images.push(imageUrl);
       }
-      
+
       if (image2) {
-        images.push({
-          path: image2,
-          // tags: image2Tags
-        });
+        const imageUrl = await uploadImage(image2.file);
+        images.push(imageUrl);
       }
-      
+
       onAdd({
         id: Date.now(),
-        name: typeName.trim(),
+        name: typeName,
         options: options,
-        images: images
+        images: images,
       });
 
       // Reset form
@@ -328,11 +211,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
       setOptions([]);
       setNewOption("");
       setImage1(null);
-      // setImage1Tags([]);
-      setNewImage1Tag("");
       setImage2(null);
-      // setImage2Tags([]);
-      setNewImage2Tag("");
       onClose();
     }
   };
@@ -385,13 +264,13 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
                 <Plus className="w-4 h-4" />
               </button>
             </div>
-            
+
             {/* Options Display */}
             {options.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {options.map((option, idx) => (
-                  <div 
-                    key={idx} 
+                  <div
+                    key={idx}
                     className="flex items-center bg-gray-100 px-3 py-1 rounded-full"
                   >
                     <span className="text-sm text-gray-700 mr-1">{option}</span>
@@ -410,11 +289,11 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
           {/* Image Section */}
           <div className="space-y-4">
             <h3 className="font-medium text-gray-700">Images</h3>
-            
+
             {/* Image 1 */}
             <div className="border rounded-lg p-4 space-y-3">
               <h4 className="text-sm font-medium text-gray-700">Image 1</h4>
-              
+
               {/* Image 1 Upload */}
               {!image1 ? (
                 <div
@@ -422,7 +301,9 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
                   onClick={handleFileSelect1}
                 >
                   <Upload className="w-8 h-8 text-gray-400" />
-                  <p className="mt-2 text-center text-gray-500 text-sm">Click to upload image</p>
+                  <p className="mt-2 text-center text-gray-500 text-sm">
+                    Click to upload image
+                  </p>
                   <input
                     type="file"
                     ref={fileInput1Ref}
@@ -434,7 +315,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
               ) : (
                 <div className="relative group">
                   <img
-                    src={image1}
+                    src={image1.url}
                     alt="Image 1"
                     className="w-full aspect-square object-cover rounded-lg"
                   />
@@ -446,14 +327,12 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
                   </button>
                 </div>
               )}
-              
-           
             </div>
-            
+
             {/* Image 2 */}
             <div className="border rounded-lg p-4 space-y-3">
               <h4 className="text-sm font-medium text-gray-700">Image 2</h4>
-              
+
               {/* Image 2 Upload */}
               {!image2 ? (
                 <div
@@ -461,7 +340,9 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
                   onClick={handleFileSelect2}
                 >
                   <Upload className="w-8 h-8 text-gray-400" />
-                  <p className="mt-2 text-center text-gray-500 text-sm">Click to upload image</p>
+                  <p className="mt-2 text-center text-gray-500 text-sm">
+                    Click to upload image
+                  </p>
                   <input
                     type="file"
                     ref={fileInput2Ref}
@@ -473,7 +354,7 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
               ) : (
                 <div className="relative group">
                   <img
-                    src={image2}
+                    src={image2.url}
                     alt="Image 2"
                     className="w-full aspect-square object-cover rounded-lg"
                   />
@@ -485,8 +366,6 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
                   </button>
                 </div>
               )}
-              
-       
             </div>
           </div>
 
@@ -511,9 +390,6 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
     </div>
   );
 };
-
-
-
 
 const ProductForm = () => {
   // Toggle state for customization
@@ -815,7 +691,6 @@ const ProductForm = () => {
       customizationData: {
         selectSize: selectedMeasurements,
         customizationType: allData.customizationTypes.map((type) => ({
-          id: type.id,
           typeName: type.name,
           standardImage: type.images[0] || "Image 1",
           customImage: type.images[1] || "Image 2",

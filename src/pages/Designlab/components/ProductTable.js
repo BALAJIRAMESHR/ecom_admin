@@ -612,6 +612,14 @@ const ProductTable = ({ setAddForm }) => {
 
   const confirmDelete = async () => {
     try {
+      await fetch(`${API_BASE_URL}/products/editproduct/${productToDelete}`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ isDeleted: true }),
+            });
+      
       const updatedProducts = products.filter((product) => product._id !== productToDelete);
       setProducts(updatedProducts);
       setFilteredProducts(updatedProducts);

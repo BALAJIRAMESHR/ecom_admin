@@ -22,6 +22,7 @@ const EditModal = ({ product, onClose, onSave }) => {
     images: product.images || [],
     tags: product.tags || [],
     stock: product.stock || "",
+    status: product.status || "",
     availability: product.availability ?? true,
     sareeSize: product.sareeSize || 5.5,
     blouseSize: product.blouseSize || 0.8,
@@ -358,64 +359,11 @@ const EditModal = ({ product, onClose, onSave }) => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     />
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={isPriceSame}
-                      onChange={(e) => {
-                        setIsPriceSame(e.target.checked);
-                        if (e.target.checked) {
-                          setFormData(prev => ({
-                            ...prev,
-                            sellingPrice: prev.actualPrice
-                          }));
-                        }
-                      }}
-                      className="rounded border-gray-300"
-                    />
-                    <label className="text-sm text-gray-600">
-                      Same as Cost Price
-                    </label>
-                  </div>
                 </div>
               </div>
 
               {/* Right Column */}
               <div className="space-y-6">
-                {/* Stock & Availability */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium text-gray-900">Stock & Availability</h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Stock
-                    </label>
-                    <input
-                      type="number"
-                      name="stock"
-                      value={formData.stock}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Availability
-                    </label>
-                    <select
-                      name="availability"
-                      value={formData.availability}
-                      onChange={handleChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    >
-                      <option value={true}>In Stock</option>
-                      <option value={false}>Out of Stock</option>
-                    </select>
-                  </div>
-                </div>
-
                 {/* Additional Details */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-gray-900">Additional Details</h3>

@@ -34,10 +34,12 @@ const ImageUploadModal = ({ isOpen, onClose, onUpload }) => {
   const handleFileSelect = () => {
     fileInputRef.current.click();
   };
-  
+
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
-      onUpload(`/api/placeholder/400/300`);
+      const filesArray = Array.from(e.target.files);
+      console.log("Selected files:", filesArray);
+      onUpload(filesArray);
       onClose();
     }
   };
@@ -135,7 +137,7 @@ const ProductForm = () => {
   
   // Image states
   const [showImageUploadModal, setShowImageUploadModal] = useState(false);
-  const [productImages, setProductImages] = useState([]);
+  const [mainImages, setMainImages] = useState([]);
   
   // Modal states
   const [showVariantModal, setShowVariantModal] = useState(false);
@@ -144,18 +146,14 @@ const ProductForm = () => {
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [categoryError, setCategoryError] = useState(null);
-  
-
-
-    const [mainImages, setMainImages] = useState([]);
-    const [variants, setVariants] = useState([]);
+  const [variants, setVariants] = useState([]);
 
   // Reset form function
   const resetForm = () => {
     setFormData(initialFormData);
     setSelectedSizes(initialSizesState);
     setTags(initialTags);
-    setProductImages([]);
+    setMainImages([]);
   };
   
   // Input change handler
@@ -287,20 +285,21 @@ const handleInputChange = (e) => {
   };
   
   // Image handlers
-  const handleImageUpload = (imagePath) => {
-    if (productImages.length >= 4) {
-      alert('Maximum 4 images allowed');
-      return;
-    }
-    
-    setProductImages([...productImages, imagePath]);
+  const handleImageUpload = (files) => {
+    const imageFiles = files.map((file) => ({
+      file,
+      url: URL.createObjectURL(file),
+    }));
+    setMainImages((prev) => [...prev, ...imageFiles]);
+    console.log("Main Images:", [...mainImages, ...imageFiles]);
   };
-  
+
   const removeImage = (index) => {
-    setProductImages(productImages.filter((_, i) => i !== index));
+    const updatedImages = mainImages.filter((_, i) => i !== index);
+    setMainImages(updatedImages);
+    console.log("Images after removal:", updatedImages);
   };
-  
-  // Add variant handler
+
   // Add variant handler
   const handleAddVariant = () => {
     if (newVariant.trim()) {
@@ -322,21 +321,88 @@ const handleInputChange = (e) => {
   const navigate = useNavigate();
   
   // Form submission
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     // Include all data in a single object for logging
     const completeFormData = {
       ...formData,
       selectedSizes,
       tags,
-      productImages
+      mainImages
     };
     
     console.log('Form data:', completeFormData);
+    await addProduct(completeFormData);
     alert('Product updated successfully!');
     
     // Reset the form after submission
     resetForm();
   };
+
+  const addProduct = async (productData) => {
+    let imageLinks = [];
+    if (productData.mainImages) {
+      let mainImages = productData.mainImages;
+      for (let i = 0; i < mainImages.length; i++) {
+        const formData = new FormData();
+        formData.append("file", mainImages[i].file);
+        const imageUploadResponse = await axios({
+          method: "post",
+          url: "/upload",
+          data: formData,
+          headers: {
+            Authorization: "QuindlTokPATFileUpload2025#$$TerOiu$",
+            "Content-Type": "multipart/form-data",
+          },
+          maxBodyLength: Infinity,
+          maxContentLength: Infinity,
+        });
+        imageLinks.push(imageUploadResponse.data.filePath);
+      }
+    }
+    console.log("Image Links:", imageLinks);
+    const productData_ = {
+      productName: productData.productName,
+      productCode: productData.productcode,
+      categoryId: productData.category,
+      categoryName: productData.categoryName,
+      variantName: productData.variant,
+      variantId: productData.variantId,
+      description: productData.description,
+      actualPrice: productData.actualPrice,
+      sellingPrice: productData.sellingPrice,
+      tags: productData.tags,
+      tax: productData.tax,
+      couponCode: productData.couponCode,
+      couponMethod: productData.couponMethod,
+      letterPrintingColor: productData.colorCodes,
+      letterPrintingText: productData.letterCodes,
+      availability: true,
+      images: imageLinks,
+      isDesignLab: true,
+      kidsSizes: productData.selectedSizes.kids,
+      adultSizes: productData.selectedSizes.adult,
+      youthSizes: productData.selectedSizes.youth,
+      womenSizes: productData.selectedSizes.women,
+      status: productData.displayStock,
+    };
+
+    console.log("Product data:", productData_);
+
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/products/addproduct`,
+        productData_
+      );
+      console.log("Product added successfully:", response.data);
+      alert("Product added successfully!");
+    } catch (error) {
+      console.error(
+        "Error adding product:",
+        error.response?.data?.message || error.message
+      );
+      alert("Failed to add product. Please try again.");
+    }
+  }
   
   return (
     <div className="w-full py-4 px-6">
@@ -601,12 +667,12 @@ const handleInputChange = (e) => {
             </div>
             
             {/* Image Gallery */}
-            {productImages.length > 0 && (
+            {mainImages.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                {productImages.map((img, idx) => (
+                {mainImages.map((img, idx) => (
                   <div key={idx} className="relative group">
                     <img 
-                      src={img} 
+                      src={img.url} 
                       alt={`Product ${idx}`} 
                       className="w-full h-24 object-cover rounded border border-gray-200"
                     />
@@ -619,7 +685,7 @@ const handleInputChange = (e) => {
                   </div>
                 ))}
                 
-                {Array.from({ length: 4 - productImages.length }).map((_, idx) => (
+                {Array.from({ length: 4 - mainImages.length }).map((_, idx) => (
                   <div key={`empty-${idx}`} className="border border-gray-200 rounded flex items-center justify-center h-24">
                     <Image className="w-8 h-8 text-gray-300" />
                   </div>
@@ -705,9 +771,8 @@ const handleInputChange = (e) => {
               className="w-full p-2 border border-gray-300 rounded-md"
             >
               <option value="-select-">-select-</option>
-              <option value="in-stock">In Stock</option>
-              <option value="low-stock">Low Stock</option>
-              <option value="out-of-stock">Out of Stock</option>
+              <option value="In Stock">In Stock</option>
+              <option value="Out of Stock">Out of Stock</option>
             </select>
           </div>
           
