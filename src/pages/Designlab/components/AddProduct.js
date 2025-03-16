@@ -1,6 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef,useEffect } from 'react';
 import { Image, X, Upload, Plus, Camera, ArrowLeft } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/api";
+import axios, { all } from "axios";
 
 // Modal Component
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -91,6 +93,9 @@ const ProductForm = () => {
   const initialFormData = {
     productName: '',
     productcode: '',
+    category: "",
+    categoryName: "",
+    variantId: "",
     variant: '-select-',
     description: '',
     actualPrice: '',
@@ -135,7 +140,16 @@ const ProductForm = () => {
   // Modal states
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [newVariant, setNewVariant] = useState('');
+
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [categoryError, setCategoryError] = useState(null);
   
+
+
+    const [mainImages, setMainImages] = useState([]);
+    const [variants, setVariants] = useState([]);
+
   // Reset form function
   const resetForm = () => {
     setFormData(initialFormData);
@@ -145,19 +159,102 @@ const ProductForm = () => {
   };
   
   // Input change handler
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-    
-    if (name === 'isPriceSame' && checked) {
+// Modify your handleInputChange function to handle the category selection special case
+// Modify your handleInputChange function to save variant ID
+const handleInputChange = (e) => {
+  const { name, value, type, checked } = e.target;
+  setFormData(prev => ({
+    ...prev,
+    [name]: type === 'checkbox' ? checked : value
+  }));
+  
+  // Special case for category selection
+  if (name === 'category' && value) {
+    const selectedCategory = categories.find(cat => (cat._id || cat.id) === value);
+    if (selectedCategory) {
       setFormData(prev => ({
         ...prev,
-        sellingPrice: prev.actualPrice
+        categoryName: selectedCategory.name || selectedCategory.categoryName
       }));
     }
+  }
+  
+  // Special case for variant selection - save both variant name and ID
+  if (name === 'variant' && value) {
+    const selectedVariant = variants.find(v => v.variantName === value);
+    if (selectedVariant) {
+      setFormData(prev => ({
+        ...prev,
+        variantId: selectedVariant._id // Save the variant ID
+      }));
+    }
+  }
+  
+  if (name === 'isPriceSame' && checked) {
+    setFormData(prev => ({
+      ...prev,
+      sellingPrice: prev.actualPrice
+    }));
+  }
+};
+
+
+  useEffect(() => {
+    fetchCategories();
+    fetchVariants();
+  }, []);
+
+  const fetchCategories = async () => {
+    setIsLoadingCategories(true);
+    setCategoryError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/categories/allcategory`);
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch categories. Status: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      // Check if data exists and handle different API response structures
+      if (data) {
+        // Check different possible structures of the API response
+        const categoriesData = Array.isArray(data)
+          ? data
+          : data.data && Array.isArray(data.data)
+          ? data.data
+          : data.categories && Array.isArray(data.categories)
+          ? data.categories
+          : null;
+
+        if (categoriesData) {
+          setCategories(categoriesData);
+          console.log("Categories fetched successfully:", categoriesData);
+        } else {
+          console.error("Invalid category data format:", data);
+          setCategoryError("Invalid data format received from server");
+        }
+      } else {
+        setCategoryError("No data received from server");
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      setCategoryError(error.message || "Failed to load categories");
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
+  const fetchVariants = async () => {
+    const getVariants = axios
+      .get(`${API_BASE_URL}/variants/getallvariants`)
+      .then((response) => {
+        console.log(response);
+        setVariants(response.data);
+      });
   };
   
   // Size checkbox handler - now adds/removes from array
@@ -204,11 +301,21 @@ const ProductForm = () => {
   };
   
   // Add variant handler
+  // Add variant handler
   const handleAddVariant = () => {
     if (newVariant.trim()) {
-      // In a real app, you would add this to your variants list
-      setNewVariant('');
-      setShowVariantModal(false);
+      axios
+        .post(`${API_BASE_URL}/variants/addvariant`, {
+          variantName: newVariant,
+        })
+        .then((response) => {
+          console.log(response);
+          const updatedVariants = [...variants, response.data];
+          setVariants(updatedVariants);
+          setNewVariant("");
+          setShowVariantModal(false);
+          console.log("Updated variants:", updatedVariants);
+        });
     }
   };
 
@@ -273,29 +380,67 @@ const ProductForm = () => {
               placeholder="Enter product ID"
             />
           </div>
+
+          <div>
+              <label className="block text-sm text-gray-700 mb-1">
+                Category
+              </label>
+              <select
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="w-full p-2 border rounded-md"
+                disabled={isLoadingCategories}
+              >
+                <option value="">-Select Category-</option>
+                {categories.map((category) => (
+                  <option
+                    key={category._id || category.id}
+                    value={category._id || category.id}
+                  >
+                    {category.name || category.categoryName}
+                  </option>
+                ))}
+              </select>
+              {isLoadingCategories && (
+                <p className="text-gray-500 text-sm mt-1">
+                  Loading categories...
+                </p>
+              )}
+              {categoryError && (
+                <p className="text-red-500 text-sm mt-1">{categoryError}</p>
+              )}
+          </div>
+          
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Variant</label>
-            <div className="flex gap-2">
-              <select
-                name="variant"
-                value={formData.variant}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="-select-">-select-</option>
-                <option value="Jersey T-shirt">Jersey T-shirt</option>
-                <option value="V-neck T-shirt">V-neck T-shirt</option>
-                <option value="Polo T-shirt">Polo T-shirt</option>
-              </select>
-              <button 
-                onClick={() => setShowVariantModal(true)}
-                className="p-2 border border-gray-300 rounded-md"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
+              <label className="block text-sm text-gray-700 mb-1">
+                          Variant
+                        </label>
+                        <div className="flex gap-2">
+                   <select
+                        name="variant"
+                        value={formData.variant}
+                        onChange={handleInputChange}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="">-Select Variant-</option>
+                        {variants.map((variant) => (
+                          <option key={variant._id} value={variant.variantName}>
+                            {variant.variantName}
+                          </option>
+                        ))}
+                      </select>
+                          <button
+                            onClick={() => setShowVariantModal(true)}
+                            className="px-4 py-2 border rounded-md hover:bg-gray-50"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
           </div>
+          
+          
           
           {/* Kids Size Section */}
           <div>
@@ -552,7 +697,7 @@ const ProductForm = () => {
           
           {/* Display Stock */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Display Stock Availability</label>
+            <label className="">Display Stock Availability</label>
             <select
               name="displayStock"
               value={formData.displayStock}
@@ -577,7 +722,7 @@ const ProductForm = () => {
             </button>
           </div>
         </div>
-      </div>
+      
       
       {/* Variant Modal */}
       <Modal isOpen={showVariantModal} onClose={() => setShowVariantModal(false)} title="Add New Variant">
@@ -616,7 +761,9 @@ const ProductForm = () => {
         onClose={() => setShowImageUploadModal(false)}
         onUpload={handleImageUpload}
       />
+      </div>
     </div>
+    
   );
 };
 

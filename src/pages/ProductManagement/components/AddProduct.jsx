@@ -180,15 +180,27 @@ const CustomizationImageModal = ({ isOpen, onClose, onUpload, title }) => {
   );
 };
 
-// New CustomizationType Modal Component that includes image upload
+
+
+
+
 const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
   const [typeName, setTypeName] = useState("");
   const [options, setOptions] = useState([]);
   const [newOption, setNewOption] = useState("");
-  const [images, setImages] = useState([]);
-  const [showCustomImageModal, setShowCustomImageModal] = useState(false);
-  const fileInputRef = useRef(null);
+  
+  // Image 1 state
+  const [image1, setImage1] = useState(null);
 
+  const [newImage1Tag, setNewImage1Tag] = useState("");
+  const fileInput1Ref = useRef(null);
+  
+  // Image 2 state
+  const [image2, setImage2] = useState(null);
+  const [newImage2Tag, setNewImage2Tag] = useState("");
+  const fileInput2Ref = useRef(null);
+
+  // Options management
   const handleAddOption = () => {
     if (newOption.trim()) {
       setOptions([...options, newOption.trim()]);
@@ -196,40 +208,131 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
     }
   };
 
+  const handleKeyDownOption = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddOption();
+    }
+  };
+
   const handleRemoveOption = (index) => {
     setOptions(options.filter((_, i) => i !== index));
   };
 
-  const handleFileSelect = () => {
-    setShowCustomImageModal(true);
+  // Image 1 management
+  const handleFileSelect1 = () => {
+    fileInput1Ref.current?.click();
   };
 
-  const handleAddImage = (imagePath) => {
-    // Check if adding this image would exceed the limit
-    if (images.length >= 2) {
-      alert("Maximum 2 images allowed");
-      return;
+  const handleFileChange1 = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage1(e.target.result);
+      };
+      reader.readAsDataURL(file);
     }
-    setImages([...images, imagePath]);
   };
 
-  const handleRemoveImage = (index) => {
-    setImages(images.filter((_, i) => i !== index));
+  const handleRemoveImage1 = () => {
+    setImage1(null);
+
   };
 
+  const handleAddImage1Tag = () => {
+    if (newImage1Tag.trim()) {
+      // setImage1Tags([...image1Tags, newImage1Tag.trim()]);
+      setNewImage1Tag("");
+    }
+  };
+
+  const handleKeyDownImage1Tag = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddImage1Tag();
+    }
+  };
+
+  // const handleRemoveImage1Tag = (index) => {
+  //   setImage1Tags(image1Tags.filter((_, i) => i !== index));
+  // };
+
+  // Image 2 management
+  const handleFileSelect2 = () => {
+    fileInput2Ref.current?.click();
+  };
+
+  const handleFileChange2 = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage2(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage2 = () => {
+    setImage2(null);
+    // setImage2Tags([]);
+  };
+
+  const handleAddImage2Tag = () => {
+    if (newImage2Tag.trim()) {
+      // setImage2Tags([...image2Tags, newImage2Tag.trim()]);
+      setNewImage2Tag("");
+    }
+  };
+
+  const handleKeyDownImage2Tag = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddImage2Tag();
+    }
+  };
+
+  // const handleRemoveImage2Tag = (index) => {
+  //   setImage2Tags(image2Tags.filter((_, i) => i !== index));
+  // };
+
+  // Form submission
   const handleSubmit = () => {
     if (typeName.trim()) {
+      const images = [];
+      
+      if (image1) {
+        images.push({
+          path: image1,
+          // tags: image1Tags
+        });
+      }
+      
+      if (image2) {
+        images.push({
+          path: image2,
+          // tags: image2Tags
+        });
+      }
+      
       onAdd({
         id: Date.now(),
         name: typeName.trim(),
         options: options,
-        images: images,
+        images: images
       });
 
       // Reset form
       setTypeName("");
       setOptions([]);
-      setImages([]);
+      setNewOption("");
+      setImage1(null);
+      // setImage1Tags([]);
+      setNewImage1Tag("");
+      setImage2(null);
+      // setImage2Tags([]);
+      setNewImage2Tag("");
       onClose();
     }
   };
@@ -264,37 +367,127 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
           </div>
 
           {/* Options */}
-
-          {/* Image Upload */}
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Images</label>
-            <div
-              className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 mb-2"
-              onClick={handleFileSelect}
-            >
-              <Camera className="w-12 h-12 text-gray-400" />
-              <p className="mt-2 text-center text-gray-500">Add images</p>
+            <label className="block text-sm text-gray-700 mb-1">Others</label>
+            <div className="flex items-center space-x-2 mb-2">
+              <input
+                type="text"
+                value={newOption}
+                onChange={(e) => setNewOption(e.target.value)}
+                onKeyDown={handleKeyDownOption}
+                placeholder="Add option (e.g. V-neck, Round neck)"
+                className="flex-1 p-2 border rounded-md"
+              />
+              <button
+                onClick={handleAddOption}
+                className="px-3 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
-
-            {images.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative group">
-                    <img
-                      src={img}
-                      alt={`Option ${idx + 1}`}
-                      className="w-full aspect-square object-cover rounded-lg"
-                    />
+            
+            {/* Options Display */}
+            {options.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {options.map((option, idx) => (
+                  <div 
+                    key={idx} 
+                    className="flex items-center bg-gray-100 px-3 py-1 rounded-full"
+                  >
+                    <span className="text-sm text-gray-700 mr-1">{option}</span>
                     <button
-                      onClick={() => handleRemoveImage(idx)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100"
+                      onClick={() => handleRemoveOption(idx)}
+                      className="text-gray-500 hover:text-red-500"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3 h-3" />
                     </button>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Image Section */}
+          <div className="space-y-4">
+            <h3 className="font-medium text-gray-700">Images</h3>
+            
+            {/* Image 1 */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-gray-700">Image 1</h4>
+              
+              {/* Image 1 Upload */}
+              {!image1 ? (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+                  onClick={handleFileSelect1}
+                >
+                  <Upload className="w-8 h-8 text-gray-400" />
+                  <p className="mt-2 text-center text-gray-500 text-sm">Click to upload image</p>
+                  <input
+                    type="file"
+                    ref={fileInput1Ref}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange1}
+                  />
+                </div>
+              ) : (
+                <div className="relative group">
+                  <img
+                    src={image1}
+                    alt="Image 1"
+                    className="w-full aspect-square object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={handleRemoveImage1}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              
+           
+            </div>
+            
+            {/* Image 2 */}
+            <div className="border rounded-lg p-4 space-y-3">
+              <h4 className="text-sm font-medium text-gray-700">Image 2</h4>
+              
+              {/* Image 2 Upload */}
+              {!image2 ? (
+                <div
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50"
+                  onClick={handleFileSelect2}
+                >
+                  <Upload className="w-8 h-8 text-gray-400" />
+                  <p className="mt-2 text-center text-gray-500 text-sm">Click to upload image</p>
+                  <input
+                    type="file"
+                    ref={fileInput2Ref}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange2}
+                  />
+                </div>
+              ) : (
+                <div className="relative group">
+                  <img
+                    src={image2}
+                    alt="Image 2"
+                    className="w-full aspect-square object-cover rounded-lg"
+                  />
+                  <button
+                    onClick={handleRemoveImage2}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              
+       
+            </div>
           </div>
 
           {/* Buttons */}
@@ -315,17 +508,12 @@ const CustomizationTypeModal = ({ isOpen, onClose, onAdd }) => {
           </div>
         </div>
       </div>
-
-      {/* Custom Image Upload Modal */}
-      <CustomizationImageModal
-        isOpen={showCustomImageModal}
-        onClose={() => setShowCustomImageModal(false)}
-        onUpload={handleAddImage}
-        title="Add  Image"
-      />
     </div>
   );
 };
+
+
+
 
 const ProductForm = () => {
   // Toggle state for customization

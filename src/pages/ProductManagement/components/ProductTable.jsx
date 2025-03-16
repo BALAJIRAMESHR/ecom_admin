@@ -3,6 +3,9 @@ import { CirclePlus, MoreVertical, X } from "lucide-react";
 import { API_BASE_URL } from "../../../config/api";
 import EditModal from "./EditModal";
 
+
+
+
 const EditProductModal = ({ product, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     _id: product._id,
