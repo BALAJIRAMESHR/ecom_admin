@@ -13,28 +13,97 @@ import {
   Printer,
   Pencil,
   Calendar,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import orderService from "../../../services/orderService";
 import { toast } from "react-toastify";
 import placeholderImage from "../../../assets/images/placeholder-image.jpg";
+import { handleImageError } from '../../../utils/imageUtils';
+import CustomizedProductView from './CustomizedProductView';
 
 // Mock RefundModal component
-const RefundModal = ({ onRequestClose, id, totalAmt, onRefund }) => {
+const RefundModal = ({ isOpen, onClose, onRefund, order }) => {
+  const [refundAmount, setRefundAmount] = useState('');
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (order) {
+      setRefundAmount(order.totalPrice.toString());
+    }
+  }, [order]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await onRefund({
+        orderId: order._id,
+        amount: parseFloat(refundAmount),
+        reason
+      });
+      onClose();
+    } catch (error) {
+      toast.error(error.message || 'Failed to process refund');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg">
-        <h2>Process Refund</h2>
-        <p>Total Amount: ₹{totalAmt / 100}</p>
-        <button
-          onClick={() => {
-            onRefund(totalAmt);
-            onRequestClose();
-          }}
-          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
-        >
-          Process Refund
-        </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 className="text-lg font-medium mb-4">Process Refund</h3>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Refund Amount (₹)
+            </label>
+            <input
+              type="number"
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              required
+              min="0"
+              max={order.totalPrice}
+              step="0.01"
+            />
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Reason for Refund
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              rows="3"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Process Refund'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -63,47 +132,43 @@ const OrderDetails = ({ orderDetails, onBack }) => {
     itemsPrice: 0,
   });
 
-  const [openRefundModal, setOpenRefundModal] = useState(false);
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [shippingStatus, setShippingStatus] = useState("");
   const [orderedItems, setOrderedItems] = useState([]);
+  const [selectedCustomProduct, setSelectedCustomProduct] = useState(null);
 
   const handleBack = () => {
     onBack();
   };
 
-  const handleStatusChange = async (event) => {
+  const handleStatusChange = async (newStatus) => {
     setLoading(true);
     try {
-      await orderService.updateOrderStatus(
+      const updatedOrder = await orderService.updateShippingStatus(
         orderData._id,
-        event.target.value === "Delivered"
+        newStatus
       );
-      setShippingStatus(event.target.value);
-      setOrderData((prev) => ({
-        ...prev,
-        isDelivered: event.target.value === "Delivered",
-      }));
-      toast.success("Status updated successfully");
+      setOrderData(updatedOrder);
+      setShippingStatus(newStatus);
+      toast.success("Shipping status updated successfully");
     } catch (error) {
-      toast.error(error.message || "Failed to update status");
-      setShippingStatus(orderData.isDelivered ? "Delivered" : "Processing");
+      toast.error(error.message || "Failed to update shipping status");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  const handleRefund = async (amount) => {
+  const handleRefund = async (refundData) => {
     setLoading(true);
     try {
-      await orderService.processRefund(orderData._id, amount);
-      toast.success("Refund processed successfully");
-      // Refresh order details
-      const updatedOrder = await orderService.getOrderById(orderData._id);
+      const updatedOrder = await orderService.processRefund(refundData);
       setOrderData(updatedOrder);
+      toast.success("Refund processed successfully");
     } catch (error) {
       toast.error(error.message || "Failed to process refund");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setOpenRefundModal(false);
   };
 
   useEffect(() => {
@@ -121,7 +186,7 @@ const OrderDetails = ({ orderDetails, onBack }) => {
       });
 
       // Update shipping status
-      setShippingStatus(orderDetails.isDelivered ? "Delivered" : "Processing");
+      setShippingStatus(orderDetails.shippingStatus || (orderDetails.isDelivered ? "Delivered" : "Processing"));
 
       // Update ordered items
       setOrderedItems(orderDetails.orderItems || []);
@@ -136,9 +201,38 @@ const OrderDetails = ({ orderDetails, onBack }) => {
     });
   };
 
-  const handleImageError = (e) => {
-    e.target.src = placeholderImage;
-    e.target.onerror = null;
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'Delivered':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'Cancelled':
+      case 'Refunded':
+        return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'Processing':
+      case 'Hold':
+        return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+      case 'Packed':
+        return <Package className="w-5 h-5 text-blue-500" />;
+      case 'Shipped':
+        return <Truck className="w-5 h-5 text-indigo-500" />;
+      default:
+        return <AlertCircle className="w-5 h-5 text-gray-500" />;
+    }
+  };
+
+  // Add this function to check if an item is customized
+  const isCustomizedItem = (item) => {
+    return item.isCustom || item.type === 'customized';
   };
 
   if (!orderDetails) {
@@ -172,7 +266,7 @@ const OrderDetails = ({ orderDetails, onBack }) => {
           <div className="flex flex-col items-center mb-6">
             <div>
               <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white mb-4">
-                {shippingAddress.firstName?.charAt()}
+                {shippingAddress.firstName?.charAt(0)}
                 {shippingAddress.lastName?.charAt(0)}
               </div>
               <h3 className="text-purple-600 font-medium text-lg">
@@ -183,26 +277,28 @@ const OrderDetails = ({ orderDetails, onBack }) => {
           <div className="space-y-6 text-center">
             <div>
               <p className="font-medium text-gray-900 text-lg mb-1">
-                {orderDetails.user.username}
+                {orderDetails.user?.username || `${shippingAddress.firstName} ${shippingAddress.lastName}`}
               </p>
-              <p className="text-gray-500">{orderDetails.user.email}</p>
+              <p className="text-gray-500">{orderDetails.user?.email || shippingAddress.email}</p>
             </div>
             <div>
               <h4 className="text-purple-600 font-medium mb-2">
                 Delivery Address
               </h4>
               <p className="text-gray-600 leading-relaxed">
-                {orderDetails.shippingAddress.addressLine1 && (
+                {shippingAddress.addressLine1}
+                {shippingAddress.addressLine2 && (
                   <>
                     <br />
-                    {orderDetails.shippingAddress.addressLine2}
+                    {shippingAddress.addressLine2}
                   </>
                 )}
-                {`${orderDetails.shippingAddress.city}, ${orderDetails.shippingAddress.state} - ${orderDetails.shippingAddress.pincode}`}
+                <br />
+                {`${shippingAddress.city}, ${shippingAddress.state} - ${shippingAddress.pincode}`}
                 <br />
                 India
                 <br />
-                {orderDetails.shippingAddress.phoneNumber}
+                {shippingAddress.phoneNumber}
               </p>
             </div>
           </div>
@@ -214,15 +310,6 @@ const OrderDetails = ({ orderDetails, onBack }) => {
             Amount Details
           </h3>
           <div className="space-y-5">
-            <div className="flex items-center justify-between py-1">
-              <span className="text-gray-600">Payment Method</span>
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-gray-900">
-                  {orderDetails.paymentMethod}
-                </span>
-                <span>💳</span>
-              </div>
-            </div>
             <div className="flex items-center justify-between py-1">
               <span className="text-gray-600">Items Total</span>
               <div className="flex items-center gap-2">
@@ -271,13 +358,24 @@ const OrderDetails = ({ orderDetails, onBack }) => {
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                  <MapPin className="w-5 h-5 text-red-500" />
+                  {getStatusIcon(shippingStatus)}
                 </div>
                 <div>
-                  <p className="text-gray-500 text-sm">Ordered Location</p>
-                  <p className="text-gray-900 font-medium">
-                    {shippingAddress.city}
-                  </p>
+                  <p className="text-gray-500 text-sm">Delivery Status</p>
+                  <select
+                    value={shippingStatus}
+                    onChange={(e) => handleStatusChange(e.target.value)}
+                    disabled={loading}
+                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md"
+                  >
+                    <option value="Processing">Processing</option>
+                    <option value="Hold">Hold</option>
+                    <option value="Packed">Packed</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Refunded">Refunded</option>
+                  </select>
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -287,7 +385,7 @@ const OrderDetails = ({ orderDetails, onBack }) => {
                 <div>
                   <p className="text-gray-500 text-sm">Order Date</p>
                   <p className="text-gray-900 font-medium">
-                    {new Date(orderDetails.createdAt).toLocaleString()}
+                    {formatDate(orderDetails.createdAt)}
                   </p>
                 </div>
               </div>
@@ -305,20 +403,6 @@ const OrderDetails = ({ orderDetails, onBack }) => {
                   }`}
                 >
                   {orderDetails.isPaid ? "PAID" : "PENDING"}
-                </span>
-              </div>
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">
-                  Fulfillment Status
-                </h4>
-                <span
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium ${
-                    orderDetails.isDelivered
-                      ? "bg-green-50 text-green-600"
-                      : "bg-purple-50 text-purple-600"
-                  }`}
-                >
-                  {orderDetails.isDelivered ? "DELIVERED" : "PROCESSING"}
                 </span>
               </div>
             </div>
@@ -358,14 +442,26 @@ const OrderDetails = ({ orderDetails, onBack }) => {
                       className="w-12 h-12 object-cover rounded"
                     />
                   </td>
-                  <td className="py-4">{item.name}</td>
+                  <td className="py-4">
+                    <div>
+                      <p className="font-medium">{item.name}</p>
+                      {isCustomizedItem(item) && (
+                        <button
+                          onClick={() => setSelectedCustomProduct(item)}
+                          className="text-sm text-purple-600 hover:text-purple-700 mt-1"
+                        >
+                          View Customization
+                        </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-4">{item.qty}</td>
                   <td className="py-4">₹{formatPrice(item.price)}</td>
                   <td className="py-4">₹{formatPrice(item.price * item.qty)}</td>
                   <td className="py-4">
                     {orderDetails.isPaid ? (
                       <button
-                        onClick={() => setOpenRefundModal(true)}
+                        onClick={() => setRefundModalOpen(true)}
                         className="px-3 py-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 text-sm"
                       >
                         Refund
@@ -399,19 +495,19 @@ const OrderDetails = ({ orderDetails, onBack }) => {
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Order Subtotal</span>
-                <span>₹{formatPrice(orderDetails.itemsPrice)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Shipping Charges</span>
-                <span>₹{formatPrice(orderDetails.shippingPrice)}</span>
+                <span>₹{formatPrice(amountDetails.itemsPrice)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Tax</span>
-                <span>₹{formatPrice(orderDetails.taxPrice)}</span>
+                <span>₹{formatPrice(amountDetails.taxPrice)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Shipping</span>
+                <span>₹{formatPrice(amountDetails.shippingPrice)}</span>
               </div>
               <div className="flex justify-between font-medium pt-2 border-t">
                 <span>Total Order Amount</span>
-                <span>₹{formatPrice(orderDetails.totalPrice)}</span>
+                <span>₹{formatPrice(amountDetails.totalAmount)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Payment Status</span>
@@ -421,9 +517,7 @@ const OrderDetails = ({ orderDetails, onBack }) => {
                   }
                 >
                   {orderDetails.isPaid
-                    ? `Paid on ${new Date(
-                        orderDetails.paidAt
-                      ).toLocaleDateString()}`
+                    ? `Paid on ${formatDate(orderDetails.paidAt)}`
                     : "Pending"}
                 </span>
               </div>
@@ -439,13 +533,23 @@ const OrderDetails = ({ orderDetails, onBack }) => {
       </div>
 
       {/* Refund Modal */}
-      {openRefundModal && (
-        <RefundModal
-          id={orderDetails._id}
-          totalAmt={orderDetails.totalPrice}
-          onRequestClose={() => setOpenRefundModal(false)}
-          onRefund={handleRefund}
-        />
+      <RefundModal
+        isOpen={refundModalOpen}
+        onClose={() => setRefundModalOpen(false)}
+        onRefund={handleRefund}
+        order={orderDetails}
+      />
+
+      {/* Customized Product View */}
+      {selectedCustomProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
+          <div className="min-h-screen p-4">
+            <CustomizedProductView 
+              product={selectedCustomProduct}
+              onClose={() => setSelectedCustomProduct(null)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -3,7 +3,7 @@ import { Trash2, Pencil, Eye } from 'lucide-react';
 import orderService from '../../../services/orderService';
 import { toast } from 'react-toastify';
 
-// Delete Confirmation Dialog component remains the same
+// Delete Confirmation Dialog component
 const DeleteConfirmationDialog = ({ isOpen, onClose, orderId, onDelete }) => {
   if (!isOpen) return null;
 
@@ -35,19 +35,17 @@ const DeleteConfirmationDialog = ({ isOpen, onClose, orderId, onDelete }) => {
   );
 };
 
-// Fixed Edit Order Dialog component - hooks called unconditionally
+// Edit Order Dialog component
 const EditOrderDialog = ({ isOpen, onClose, order, onUpdate }) => {
-  // Always initialize hooks at the top level
   const [status, setStatus] = useState('');
   const [currentStatus, setCurrentStatus] = useState('');
+  const [loading, setLoading] = useState(false);
   
-  // Status options
   const statusOptions = ['Processing', 'Hold', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Refunded'];
   
-  // Update local state when order changes
   useEffect(() => {
     if (order) {
-      const orderStatus = order.status || (order.isDelivered ? 'Delivered' : 'Processing');
+      const orderStatus = order.shippingStatus || order.status || (order.isDelivered ? 'Delivered' : 'Processing');
       setStatus(orderStatus);
       setCurrentStatus(orderStatus);
     }
@@ -55,15 +53,16 @@ const EditOrderDialog = ({ isOpen, onClose, order, onUpdate }) => {
   
   if (!isOpen || !order) return null;
 
-  const handleUpdate = () => {
-    const updatedOrder = {
-      ...order,
-      status,
-      isDelivered: status === 'Delivered'
-    };
-    
-    onUpdate(updatedOrder);
-    onClose();
+  const handleUpdate = async () => {
+    setLoading(true);
+    try {
+      await onUpdate(order._id, status);
+      onClose();
+    } catch (error) {
+      toast.error(error.message || 'Failed to update order status');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -76,7 +75,7 @@ const EditOrderDialog = ({ isOpen, onClose, order, onUpdate }) => {
         
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Current fulfillment Status
+            Current Status
           </label>
           <input 
             type="text" 
@@ -88,13 +87,14 @@ const EditOrderDialog = ({ isOpen, onClose, order, onUpdate }) => {
         
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Change fulfillment Status
+            Change Status
           </label>
           <div className="relative">
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded-md appearance-none pr-8"
+              disabled={loading}
             >
               {statusOptions.map(option => (
                 <option key={option} value={option}>{option}</option>
@@ -112,14 +112,16 @@ const EditOrderDialog = ({ isOpen, onClose, order, onUpdate }) => {
           <button 
             onClick={onClose}
             className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+            disabled={loading}
           >
             Cancel
           </button>
           <button 
             onClick={handleUpdate}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            disabled={loading}
           >
-            Update
+            {loading ? 'Updating...' : 'Update'}
           </button>
         </div>
       </div>
@@ -127,7 +129,6 @@ const EditOrderDialog = ({ isOpen, onClose, order, onUpdate }) => {
   );
 };
 
-// Updated OrderTable component with edit functionality
 const OrderTable = ({ onSelectOrder }) => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -137,7 +138,6 @@ const OrderTable = ({ onSelectOrder }) => {
   const [selectedOrders, setSelectedOrders] = useState({});
   const [selectAll, setSelectAll] = useState(false);
   
-  // Dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -170,362 +170,264 @@ const OrderTable = ({ onSelectOrder }) => {
     }
   };
   
-  const handleUpdateOrder = async (updatedOrder) => {
+  const handleUpdateOrder = async (orderId, newStatus) => {
     try {
-      await orderService.updateOrder(updatedOrder._id, updatedOrder);
-      toast.success('Order updated successfully');
-      fetchOrders();
+      const updatedOrder = await orderService.updateShippingStatus(orderId, newStatus);
+      toast.success('Order status updated successfully');
+      fetchOrders(); // Refresh the orders list
     } catch (error) {
-      toast.error(error.message || 'Failed to update order');
-    }
-  };
-  
-  const openDeleteDialog = (orderId) => {
-    setOrderToDelete(orderId);
-    setDeleteDialogOpen(true);
-  };
-
-  const closeDeleteDialog = () => {
-    setDeleteDialogOpen(false);
-    setOrderToDelete(null);
-  };
-  
-  const openEditDialog = (order) => {
-    setOrderToEdit(order);
-    setEditDialogOpen(true);
-  };
-
-  const closeEditDialog = () => {
-    setEditDialogOpen(false);
-    setOrderToEdit(null);
-  };
-
-  const handleView = (order) => {
-    onSelectOrder(order);
-  };
-
-  // Order type tabs - removed "General"
-  const orderTypeTabs = ['All', 'Alteration', 'Customization'];
-
-  // Status filter tabs
-  const statusTabs = ['All orders', 'Shipped', 'Completed', 'Cancel/Refund'];
-
-  // Handle toggle all orders selection
-  const handleToggleSelectAll = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    
-    const newSelectedOrders = {};
-    if (newSelectAll) {
-      // Select all current visible orders
-      currentOrders.forEach(order => {
-        newSelectedOrders[order._id] = true;
-      });
-    }
-    
-    setSelectedOrders(newSelectedOrders);
-  };
-
-  // Handle individual order selection
-  const handleSelectOrder = (orderId) => {
-    setSelectedOrders(prev => ({
-      ...prev,
-      [orderId]: !prev[orderId]
-    }));
-    
-    // Update selectAll state based on selection
-    if (selectedOrders[orderId]) {
-      setSelectAll(false);
-    } else {
-      const allSelected = currentOrders.every(order => 
-        order._id === orderId ? true : selectedOrders[order._id]
-      );
-      setSelectAll(allSelected);
+      toast.error(error.message || 'Failed to update order status');
+      throw error; // Re-throw to handle in the dialog
     }
   };
 
-  // Filter orders based on selected filters
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-IN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR'
+    }).format(price);
+  };
+
+  const getStatusClass = (status) => {
+    const statusClasses = {
+      'Processing': 'bg-yellow-100 text-yellow-800',
+      'Hold': 'bg-orange-100 text-orange-800',
+      'Packed': 'bg-blue-100 text-blue-800',
+      'Shipped': 'bg-indigo-100 text-indigo-800',
+      'Delivered': 'bg-green-100 text-green-800',
+      'Cancelled': 'bg-red-100 text-red-800',
+      'Refunded': 'bg-gray-100 text-gray-800'
+    };
+    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+  };
+
   const getFilteredOrders = () => {
     let filtered = [...orders];
     
-    // Apply order type filter
-    if (orderTypeFilter !== 'All') {
-      filtered = filtered.filter(order => order.orderType === orderTypeFilter);
+    if (statusFilter !== 'All orders') {
+      filtered = filtered.filter(order => order.shippingStatus === statusFilter);
     }
     
-    // Apply status filter
-    if (statusFilter !== 'All orders') {
-      switch (statusFilter) {
-        case 'Shipped':
-          filtered = filtered.filter(order => 
-            !order.isDelivered && order.status !== 'Cancelled');
-          break;
-        case 'Completed':
-          filtered = filtered.filter(order => order.isDelivered);
-          break;
-        case 'Cancel/Refund':
-          filtered = filtered.filter(order => 
-            order.status === 'Cancelled' || order.status === 'Refunded');
-          break;
-        default:
-          break;
-      }
+    if (orderTypeFilter !== 'All') {
+      filtered = filtered.filter(order => 
+        orderTypeFilter === 'Custom' ? 
+          order.orderItems.some(item => item.isCustom) :
+          !order.orderItems.some(item => item.isCustom)
+      );
     }
     
     return filtered;
   };
 
-  const filteredOrders = getFilteredOrders();
-
-  // Calculate pagination
-  const indexOfLastOrder = currentPage * ordersPerPage;
-  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
-  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-
-  const getStatusClass = (status) => {
-    switch (status) {
-      case 'Delivered':
-        return 'text-green-500';
-      case 'Processing':
-        return 'text-blue-500';
-      case 'Cancelled':
-      case 'Refunded':
-        return 'text-red-500';
-      default:
-        return 'text-gray-500';
-    }
-  };
-
   if (loading) {
-    return <div className="text-center py-4">Loading...</div>;
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
   }
 
-  return (
-    <div className="w-full">
-      {/* Order Type Tabs */}
-      <div className="flex gap-4 mb-6">
-        {orderTypeTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setOrderTypeFilter(tab);
-              setCurrentPage(1);
-            }}
-            className={`px-8 py-3 rounded-lg ${
-              orderTypeFilter === tab
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+  const filteredOrders = getFilteredOrders();
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+  const startIndex = (currentPage - 1) * ordersPerPage;
+  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + ordersPerPage);
 
-      {/* Status Filter Tabs */}
-      <div className="flex gap-6 mb-6">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setStatusFilter(tab);
-              setCurrentPage(1);
-            }}
-            className={`px-4 py-2 ${
-              statusFilter === tab
-                ? 'text-purple-600 border-b-2 border-purple-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+  return (
+    <div className="bg-white rounded-lg shadow">
+      {/* Filters */}
+      <div className="p-4 border-b">
+        <div className="flex gap-4">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="p-2 border rounded-md"
           >
-            {tab}
-          </button>
-        ))}
+            <option value="All orders">All orders</option>
+            <option value="Processing">Processing</option>
+            <option value="Hold">Hold</option>
+            <option value="Packed">Packed</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Refunded">Refunded</option>
+          </select>
+          
+          <select
+            value={orderTypeFilter}
+            onChange={(e) => setOrderTypeFilter(e.target.value)}
+            className="p-2 border rounded-md"
+          >
+            <option value="All">All Types</option>
+            <option value="Custom">Custom Orders</option>
+            <option value="Regular">Regular Orders</option>
+          </select>
+        </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <table className="w-full text-sm text-left">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
-            <tr className="border-b">
-              <th className="px-6 py-4 text-gray-600 font-medium">
-                <input 
-                  type="checkbox" 
-                  className="rounded" 
-                  checked={selectAll}
-                  onChange={handleToggleSelectAll}
-                />
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Order ID
               </th>
-              <th className="px-6 py-4 text-gray-600 font-medium">Order Detail</th>
-              <th className="px-6 py-4 text-gray-600 font-medium">Customer Detail</th>
-              <th className="px-6 py-4 text-gray-600 font-medium">Status</th>
-              <th className="px-6 py-4 text-gray-600 font-medium">Total Amount</th>
-              <th className="px-6 py-4 text-gray-600 font-medium">Actions</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Customer
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Payment
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody>
-            {currentOrders.length > 0 ? (
-              currentOrders.map((order) => (
-                <tr key={order._id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <input 
-                      type="checkbox" 
-                      className="rounded" 
-                      checked={!!selectedOrders[order._id]}
-                      onChange={() => handleSelectOrder(order._id)}
-                    />
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span className="font-medium">ORDER#{order._id.slice(-6)}</span>
-                      <span className="text-gray-500 text-sm">
-                        {new Date(order.createdAt).toLocaleString()}
-                      </span>
-                      {order.orderType && order.orderType !== 'General' && (
-                        <span className="text-xs px-2 py-1 mt-1 rounded-full bg-purple-100 text-purple-600 inline-block w-fit">
-                          {order.orderType}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col">
-                      <span>{`${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`}</span>
-                      <span className="text-gray-500">{order.shippingAddress.phoneNumber}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      <span className={order.isPaid ? 'text-green-500' : 'text-orange-500'}>
-                        {order.isPaid ? 'Paid' : 'Cash on Delivery'}
-                      </span>
-                      <span className={getStatusClass(order.status || (order.isDelivered ? 'Delivered' : 'Processing'))}>
-                        {order.status || (order.isDelivered ? 'Delivered' : 'Processing')}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-medium">₹{order.totalPrice}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleView(order)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        title="View"
-                      >
-                        <Eye className="w-4 h-4 text-blue-500" />
-                      </button>
-                      <button
-                        onClick={() => openEditDialog(order)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4 text-green-500" />
-                      </button>
-                      <button
-                        onClick={() => openDeleteDialog(order._id)}
-                        className="p-1 hover:bg-gray-100 rounded"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                  No orders found matching the selected filters.
+          <tbody className="bg-white divide-y divide-gray-200">
+            {paginatedOrders.map((order) => (
+              <tr key={order._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  #{order._id.slice(-6)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {formatDate(order.createdAt)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.shippingStatus || order.status || (order.isDelivered ? 'Delivered' : 'Processing'))}`}>
+                    {order.shippingStatus || order.status || (order.isDelivered ? 'Delivered' : 'Processing')}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {formatPrice(order.totalPrice)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {order.paymentMethod}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => onSelectOrder(order)}
+                      className="text-gray-600 hover:text-gray-900"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOrderToEdit(order);
+                        setEditDialogOpen(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      <Pencil className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOrderToDelete(order._id);
+                        setDeleteDialogOpen(true);
+                      }}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
       </div>
 
       {/* Pagination */}
-      {filteredOrders.length > 0 && (
-        <div className="flex justify-between items-center mt-4 text-sm">
-          <div>
-            Showing {indexOfFirstOrder + 1} to {Math.min(indexOfLastOrder, filteredOrders.length)} of {filteredOrders.length} entries
-          </div>
-          <div className="flex gap-2">
+      {totalPages > 1 && (
+        <div className="px-4 py-3 border-t flex items-center justify-between">
+          <div className="flex-1 flex justify-between sm:hidden">
             <button
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               Previous
             </button>
-            {totalPages <= 5 ? (
-              [...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === i + 1
-                      ? 'bg-purple-600 text-white'
-                      : 'border hover:bg-gray-50'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))
-            ) : (
-              <>
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === 1 ? 'bg-purple-600 text-white' : 'border hover:bg-gray-50'
-                  }`}
-                >
-                  1
-                </button>
-                {currentPage > 3 && <span className="px-2">...</span>}
-                {currentPage > 2 && currentPage < totalPages && (
-                  <button
-                    onClick={() => setCurrentPage(currentPage)}
-                    className="px-3 py-1 rounded bg-purple-600 text-white"
-                  >
-                    {currentPage}
-                  </button>
-                )}
-                {currentPage < totalPages - 2 && <span className="px-2">...</span>}
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  className={`px-3 py-1 rounded ${
-                    currentPage === totalPages ? 'bg-purple-600 text-white' : 'border hover:bg-gray-50'
-                  }`}
-                >
-                  {totalPages}
-                </button>
-              </>
-            )}
             <button
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="px-3 py-1 border rounded hover:bg-gray-50 disabled:opacity-50"
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
             >
               Next
             </button>
           </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                <span className="font-medium">
+                  {Math.min(startIndex + ordersPerPage, filteredOrders.length)}
+                </span>{' '}
+                of <span className="font-medium">{filteredOrders.length}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                  Previous
+                </button>
+                {[...Array(totalPages)].map((_, index) => (
+                  <button
+                    key={index + 1}
+                    onClick={() => setCurrentPage(index + 1)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                      currentPage === index + 1
+                        ? 'z-10 bg-purple-50 border-purple-500 text-purple-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <DeleteConfirmationDialog 
+      {/* Dialogs */}
+      <DeleteConfirmationDialog
         isOpen={deleteDialogOpen}
-        onClose={closeDeleteDialog}
+        onClose={() => setDeleteDialogOpen(false)}
         orderId={orderToDelete}
         onDelete={handleDelete}
       />
       
-      {/* Edit Order Dialog */}
       <EditOrderDialog
         isOpen={editDialogOpen}
-        onClose={closeEditDialog}
+        onClose={() => setEditDialogOpen(false)}
         order={orderToEdit}
         onUpdate={handleUpdateOrder}
       />

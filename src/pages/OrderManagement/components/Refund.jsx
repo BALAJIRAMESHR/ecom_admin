@@ -1,69 +1,119 @@
-import React, { useEffect, useState } from "react";
-import Modal from "react-modal";
-import { toast, ToastContainer } from "react-toastify";
-import { editOrderRefund } from "../../../firebase/Orders";
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
+import orderService from '../../../services/orderService';
+import { toast } from 'react-toastify';
 
-const RefundModal = ({ onRequestClose, id, totalAmt,  }) => {
-  const [refundAmount, setRefundAmount] = useState("");
+const Refund = ({ order, onClose, onRefundComplete }) => {
+  const [refundAmount, setRefundAmount] = useState(order.totalPrice.toString());
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRefund = async() => {
-    console.log("Refund amount:", refundAmount,totalAmt/100);
-    if (refundAmount < 0 || refundAmount >= (Number(totalAmt)/100)) {
-      console.log("Refund amount is valid");
-      toast.warning("Refund amount is valid");
-      return
-    }
-    const res = await editOrderRefund(id, refundAmount);
-    if (res) {
-        toast.success("Refund amount updated successfully");
-      setTimeout(() => {
-          onRequestClose();
-      },1000)
-      return
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const refundData = {
+        orderId: order._id,
+        amount: parseFloat(refundAmount),
+        reason
+      };
+      await orderService.processRefund(refundData);
+      toast.success('Refund processed successfully');
+      onRefundComplete();
+      onClose();
+    } catch (error) {
+      toast.error(error.message || 'Failed to process refund');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-        <ToastContainer />
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-        {/* Header Section */}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-800">Enter Your Refund Amount</h2>
+          <h3 className="text-lg font-medium">Process Refund</h3>
           <button
-            onClick={onRequestClose}
-            className="text-gray-500 hover:text-black focus:outline-none"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
           >
-            ✕
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        <input
-          type="number"
-          value={refundAmount}
-          onChange={(e) => setRefundAmount(e.target.value)}
-          placeholder="Enter refund amount"
-          className="border border-gray-300 rounded-md p-2 mb-4 w-full"
-        />
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Order Details
+            </label>
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="text-sm">
+                <span className="text-gray-600">Order ID:</span> #{order._id.slice(-6)}
+              </p>
+              <p className="text-sm">
+                <span className="text-gray-600">Customer:</span>{' '}
+                {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+              </p>
+              <p className="text-sm">
+                <span className="text-gray-600">Total Amount:</span>{' '}
+                ₹{order.totalPrice}
+              </p>
+            </div>
+          </div>
 
-        <div className="flex gap-10">
-            <button
-            onClick={handleRefund}
-            className="bg-blue-500 text-white p-2 rounded-md w-full"
-            >
-            Refund
-            </button>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Refund Amount (₹)
+            </label>
+            <input
+              type="number"
+              value={refundAmount}
+              onChange={(e) => setRefundAmount(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              required
+              min="0"
+              max={order.totalPrice}
+              step="0.01"
+            />
+            <p className="mt-1 text-sm text-gray-500">
+              Maximum refund amount: ₹{order.totalPrice}
+            </p>
+          </div>
 
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Reason for Refund
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="w-full p-2 border rounded-md"
+              rows="3"
+              required
+              placeholder="Please provide a reason for the refund..."
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
             <button
-                onClick={onRequestClose}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
-                Close
+              Cancel
             </button>
-        </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+            >
+              {loading ? 'Processing...' : 'Process Refund'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
 };
 
-export default RefundModal;
+export default Refund;

@@ -15,7 +15,7 @@ const orderService = {
   getAllOrders: async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/orders/myorders`,
+        `${API_BASE_URL}/orders`,
         getAuthHeader()
       );
       return response.data;
@@ -51,6 +51,20 @@ const orderService = {
     }
   },
 
+  // Update shipping status
+  updateShippingStatus: async (orderId, shippingStatus) => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/orders/${orderId}/shipping-status`,
+        { shippingStatus },
+        getAuthHeader()
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: 'Failed to update shipping status' };
+    }
+  },
+
   // Update payment status
   updatePaymentStatus: async (orderId) => {
     try {
@@ -79,11 +93,11 @@ const orderService = {
   },
 
   // Process refund
-  processRefund: async (orderId, refundAmount) => {
+  processRefund: async (refundData) => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/orders/${orderId}/refund`,
-        { refundAmount },
+        `${API_BASE_URL}/orders/${refundData.orderId}/refund`,
+        refundData,
         getAuthHeader()
       );
       return response.data;
