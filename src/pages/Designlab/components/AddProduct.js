@@ -135,10 +135,6 @@ const ProductForm = () => {
   const [tags, setTags] = useState(initialTags);
   const [newTag, setNewTag] = useState('');
   
-  // Image states
-  const [showImageUploadModal, setShowImageUploadModal] = useState(false);
-  const [mainImages, setMainImages] = useState([]);
-  
   // Modal states
   const [showVariantModal, setShowVariantModal] = useState(false);
   const [newVariant, setNewVariant] = useState('');
@@ -148,12 +144,20 @@ const ProductForm = () => {
   const [categoryError, setCategoryError] = useState(null);
   const [variants, setVariants] = useState([]);
 
+  // Color-image set state
+  const [colorImageSets, setColorImageSets] = useState([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newSet, setNewSet] = useState({
+    color: '',
+    images: [null, null, null, null], // [front, back, rightSleeve, leftSleeve]
+  });
+  const [editIndex, setEditIndex] = useState(null);
+
   // Reset form function
   const resetForm = () => {
     setFormData(initialFormData);
     setSelectedSizes(initialSizesState);
     setTags(initialTags);
-    setMainImages([]);
   };
   
   // Input change handler
@@ -284,22 +288,6 @@ const handleInputChange = (e) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
   };
   
-  // Image handlers
-  const handleImageUpload = (files) => {
-    const imageFiles = files.map((file) => ({
-      file,
-      url: URL.createObjectURL(file),
-    }));
-    setMainImages((prev) => [...prev, ...imageFiles]);
-    console.log("Main Images:", [...mainImages, ...imageFiles]);
-  };
-
-  const removeImage = (index) => {
-    const updatedImages = mainImages.filter((_, i) => i !== index);
-    setMainImages(updatedImages);
-    console.log("Images after removal:", updatedImages);
-  };
-
   // Add variant handler
   const handleAddVariant = () => {
     if (newVariant.trim()) {
@@ -327,12 +315,17 @@ const handleInputChange = (e) => {
       ...formData,
       selectedSizes,
       tags,
-      mainImages
     };
+
+    // colorImageSets should not be empty
+    if (colorImageSets.length === 0) {
+      alert('Please add at least one color image set.');
+      return;
+    }
     
-    console.log('Form data:', completeFormData);
+    console.log('Form data:', completeFormData, colorImageSets);
     await addProduct(completeFormData);
-    alert('Product updated successfully!');
+    // alert('Product updated successfully!');
     
     // Reset the form after submission
     resetForm();
@@ -384,6 +377,7 @@ const handleInputChange = (e) => {
       youthSizes: productData.selectedSizes.youth,
       womenSizes: productData.selectedSizes.women,
       status: productData.displayStock,
+      designLabProducts: colorImageSets,
     };
 
     console.log("Product data:", productData_);
@@ -403,6 +397,38 @@ const handleInputChange = (e) => {
       alert("Failed to add product. Please try again.");
     }
   }
+  
+  // Helper to upload a single image file or base64 string
+  const uploadImageAndGetUrl = async (img) => {
+    // If already a URL (starts with http or /static/), return as is
+    if (typeof img === 'string' && (img.startsWith('http') || img.startsWith('/'))) return img;
+    // If it's a File object or base64 string, upload
+    let file;
+    if (img instanceof File) {
+      file = img;
+    } else if (typeof img === 'string' && img.startsWith('data:')) {
+      // Convert base64 to File
+      const arr = img.split(','), mime = arr[0].match(/:(.*?);/)[1], bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+      for (let i = 0; i < n; i++) u8arr[i] = bstr.charCodeAt(i);
+      file = new File([u8arr], 'custom.png', { type: mime });
+    } else {
+      return img;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    const imageUploadResponse = await axios({
+      method: 'post',
+      url: '/upload',
+      data: formData,
+      headers: {
+        Authorization: 'QuindlTokPATFileUpload2025#$$TerOiu$',
+        'Content-Type': 'multipart/form-data',
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    });
+    return imageUploadResponse.data.filePath;
+  };
   
   return (
     <div className="w-full py-4 px-6">
@@ -659,40 +685,128 @@ const handleInputChange = (e) => {
         
         {/* Right Column - Images and additional info */}
         <div className="space-y-6">
-          {/* Image Upload Area */}
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 mb-6">
-            <div className="flex flex-col items-center justify-center">
-              <Upload className="w-12 h-12 text-gray-400" />
-              <p className="mt-2 text-center text-gray-500">Drop your Files here or <span className="text-blue-500 cursor-pointer" onClick={() => setShowImageUploadModal(true)}>Browse</span></p>
+          {/* Color-Image Sets Section */}
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <span className="font-medium">Color & Images Sets</span>
+              <button
+                onClick={() => setDialogOpen(true)}
+                className="px-3 py-1 bg-purple-600 text-white rounded"
+              >
+                Add Set
+              </button>
             </div>
-            
-            {/* Image Gallery */}
-            {mainImages.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6">
-                {mainImages.map((img, idx) => (
-                  <div key={idx} className="relative group">
-                    <img 
-                      src={img.url} 
-                      alt={`Product ${idx}`} 
-                      className="w-full h-24 object-cover rounded border border-gray-200"
-                    />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {colorImageSets.map((set, idx) => (
+                <div key={idx} className="border rounded p-3 flex flex-col items-center relative">
+                  <div className="mb-2 font-medium capitalize">Color: {set.color}</div>
+                  <div className="flex gap-2 mb-2">
+                    {set.images.map((img, i) => (
+                      <img key={i} src={img} alt="" className="w-12 h-12 object-cover rounded" />
+                    ))}
+                  </div>
+                  <div className="flex gap-2 absolute top-2 right-2">
                     <button
-                      onClick={() => removeImage(idx)}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100"
+                      onClick={() => {
+                        setEditIndex(idx);
+                        setNewSet(set);
+                        setDialogOpen(true);
+                      }}
+                      className="p-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200"
+                      title="Edit"
                     >
-                      <X className="w-4 h-4" />
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828a4 4 0 01-2.828 1.172H7v-2a4 4 0 011.172-2.828z" /></svg>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setColorImageSets(prev => prev.filter((_, i) => i !== idx));
+                      }}
+                      className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                      title="Delete"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                   </div>
-                ))}
-                
-                {Array.from({ length: 4 - mainImages.length }).map((_, idx) => (
-                  <div key={`empty-${idx}`} className="border border-gray-200 rounded flex items-center justify-center h-24">
-                    <Image className="w-8 h-8 text-gray-300" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dialog for adding a new set */}
+          {dialogOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-lg font-semibold mb-4">{editIndex !== null ? 'Edit' : 'Add'} Color & Images Set</h2>
+                <div className="mb-4">
+                  <label className="block mb-1 font-medium">Color</label>
+                  <input
+                    type="text"
+                    value={newSet.color}
+                    onChange={e => setNewSet({ ...newSet, color: e.target.value })}
+                    className="w-full border rounded p-2"
+                    placeholder="e.g. white"
+                  />
+                </div>
+                {['Front', 'Back', 'Right Sleeve', 'Left Sleeve'].map((label, idx) => (
+                  <div className="mb-3" key={label}>
+                    <label className="block mb-1">{label} Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = ev => {
+                          const images = [...newSet.images];
+                          images[idx] = ev.target.result;
+                          setNewSet({ ...newSet, images });
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    {newSet.images[idx] && (
+                      <img src={newSet.images[idx]} alt={label} className="w-16 h-16 mt-1 object-cover rounded" />
+                    )}
                   </div>
                 ))}
+                <div className="flex justify-end gap-2 mt-4">
+                  <button
+                    onClick={() => {
+                      setDialogOpen(false);
+                      setNewSet({ color: '', images: [null, null, null, null] });
+                      setEditIndex(null);
+                    }}
+                    className="px-4 py-2 border rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!newSet.color || newSet.images.some(img => !img)) {
+                        alert('Please select a color and all 4 images.');
+                        return;
+                      }
+                      // Upload images if needed
+                      const uploadedImages = await Promise.all(newSet.images.map(img => uploadImageAndGetUrl(img)));
+                      const setToSave = { ...newSet, images: uploadedImages };
+                      if (editIndex !== null) {
+                        setColorImageSets(prev => prev.map((set, i) => i === editIndex ? setToSave : set));
+                      } else {
+                        setColorImageSets(prev => [...prev, setToSave]);
+                      }
+                      setNewSet({ color: '', images: [null, null, null, null] });
+                      setDialogOpen(false);
+                      setEditIndex(null);
+                    }}
+                    className="px-4 py-2 bg-purple-600 text-white rounded"
+                  >
+                    {editIndex !== null ? 'Update' : 'Add'}
+                  </button>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
           
           {/* Tax */}
           <div>
@@ -783,7 +897,7 @@ const handleInputChange = (e) => {
               onClick={handleUpdate}
               className="w-2/3 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700"
             >
-              Update
+              Add Product
             </button>
           </div>
         </div>
@@ -819,13 +933,6 @@ const handleInputChange = (e) => {
           </div>
         </div>
       </Modal>
-      
-      {/* Image Upload Modal */}
-      <ImageUploadModal
-        isOpen={showImageUploadModal}
-        onClose={() => setShowImageUploadModal(false)}
-        onUpload={handleImageUpload}
-      />
       </div>
     </div>
     

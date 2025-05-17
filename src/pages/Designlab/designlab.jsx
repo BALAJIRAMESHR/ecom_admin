@@ -7,6 +7,12 @@ import ProductTable from './components/ProductTable';
 const ProductManagement = () => {
   const [activePage, setActivePage] = useState('Design Lab');
   const [AddForm, setAddForm] = useState(false);
+  const [colorImageSets, setColorImageSets] = useState([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [newSet, setNewSet] = useState({
+    color: '',
+    images: [null, null, null, null], // [front, back, rightSleeve, leftSleeve]
+  });
 
   const handleNavigate = (page) => {
     setActivePage(page);
